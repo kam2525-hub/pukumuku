@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>パン工房プクムク 公式LINEスタンプ ジェネレーター</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@800;900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'M PLUS Rounded 1c', sans-serif; }
+    body {
+      background: #3A2312;
+      color: #FFF;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 { font-size: 24px; color: #FFE082; margin-bottom: 8px; text-align: center; }
+    p.sub { font-size: 14px; color: #D7CCC8; margin-bottom: 24px; text-align: center; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 20px;
+      max-width: 1440px;
+      width: 100%;
+    }
+    .card {
+      background: #FFFBF0;
+      border: 3px solid #E0822A;
+      border-radius: 16px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .canvas-wrapper {
+      width: 320px;
+      height: 270px;
+      background-image: linear-gradient(45deg, #EEE 25%, transparent 25%),
+                        linear-gradient(-45deg, #EEE 25%, transparent 25%),
+                        linear-gradient(45deg, transparent 75%, #EEE 75%),
+                        linear-gradient(-45deg, transparent 75%, #EEE 75%);
+      background-size: 16px 16px;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+      background-color: #FFF;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+    canvas.preview-canvas {
+      width: 320px;
+      height: 270px;
+      display: block;
+    }
+    .info {
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      padding: 0 8px;
+      color: #5D2E0B;
+      font-weight: 800;
+      font-size: 14px;
+    }
+    .status-badge {
+      background: #4CAF50;
+      color: #FFF;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🍞 パン工房プクムク 公式LINEアニメーションスタンプ</h1>
+  <p class="sub">3D純くん（従業員 純利益）動くスタンプ 全8種類プレビュー ＆ 高解像度レンダラー</p>
+
+  <div class="grid" id="stickers-grid"></div>
+
+  <!-- オフスクリーン描画用キャンバス -->
+  <div style="position: absolute; left: -9999px; top: -9999px;">
+    <canvas id="offscreen-canvas" width="320" height="270"></canvas>
+  </div>
+
+  <script>
+    const STAMP_WIDTH = 320;
+    const STAMP_HEIGHT = 270;
+    const TOTAL_FRAMES = 20; // 2秒 / 10fps
+    const DURATION_SEC = 2.0;
+
+    // スタンプ8種類の定義
+    const STAMP_DEFS = [
+      { id: '01_hello', title: 'こんにちは！', anim: 'Wave', text: 'こんにちは！' },
+      { id: '02_thankyou', title: 'ありがとう！', anim: 'Bow', text: 'ありがとう！' },
+      { id: '03_ok', title: 'OK！', anim: 'Carry_Idle', text: 'OK！' },
+      { id: '04_no', title: 'NO', anim: 'Carry_Idle', text: 'NO' },
+      { id: '05_hurry', title: '急ぎます！', anim: 'Carry_Run', text: '急ぎます！' },
+      { id: '06_itadakimasu', title: 'いただきます', anim: 'Carry_Idle', text: 'いただきます' },
+      { id: '07_otsukare', title: 'お疲れさまです', anim: 'Carry_Idle', text: 'お疲れさまです' },
+      { id: '08_yatta', title: 'やったー！', anim: 'Wave', text: 'やったー！' }
+    ];
+
+    // UIグリッドの生成
+    const gridEl = document.getElementById('stickers-grid');
+    const previewCanvases = [];
+
+    STAMP_DEFS.forEach((def, idx) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="canvas-wrapper">
+          <canvas class="preview-canvas" id="preview-${idx}" width="320" height="270"></canvas>
+        </div>
+        <div class="info">
+          <span>${def.id}.png - ${def.title}</span>
+          <span class="status-badge" id="badge-${idx}">読込中...</span>
+        </div>
+      `;
+      gridEl.appendChild(card);
+      previewCanvases.push(document.getElementById(`preview-${idx}`));
+    });
+
+    // --- Three.js オフスクリーン環境セットアップ ---
+    const offscreenCanvas = document.getElementById('offscreen-canvas');
+    const composeCanvas = document.createElement('canvas');
+    composeCanvas.width = STAMP_WIDTH;
+    composeCanvas.height = STAMP_HEIGHT;
+    const composeCtx = composeCanvas.getContext('2d');
+
+    const scene = new THREE.Scene();
+
+    const camera = new THREE.PerspectiveCamera(40, STAMP_WIDTH / STAMP_HEIGHT, 0.1, 100);
+    camera.position.set(0, 0.95, 3.2);
+    camera.lookAt(0, 0.85, 0);
+
+    const renderer = new THREE.WebGLRenderer({
+      canvas: offscreenCanvas,
+      alpha: true,
+      antialias: true,
+      preserveDrawingBuffer: true,
+      powerPreference: 'high-performance'
+    });
+    renderer.setSize(STAMP_WIDTH, STAMP_HEIGHT);
+    renderer.setPixelRatio(1);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
+
+    // 明るく温かい照明（キャラクターを美しく際立たせる）
+    const ambLight = new THREE.AmbientLight(0xFFF8EE, 1.25);
+    scene.add(ambLight);
+
+    const dirLight1 = new THREE.DirectionalLight(0xFFE5B4, 1.35);
+    dirLight1.position.set(2, 4, 3);
+    scene.add(dirLight1);
+
+    const dirLight2 = new THREE.DirectionalLight(0xFFD1A4, 0.7);
+    dirLight2.position.set(-2, 2, 2);
+    scene.add(dirLight2);
+
+    // キャラクターグループ
+    const junGroup = new THREE.Group();
+    scene.add(junGroup);
+
+    let mixer = null;
+    let actions = {};
+    let junModel = null;
+    let isModelReady = false;
+
+    // パンモデル（いただきます・お疲れさま用）
+    let baguetteMesh = null;
+    window.modelLoadError = null;
+
+    const gltfLoader = new THREE.GLTFLoader();
+    console.log("Loading jun_kun_carry_box.glb...");
+    gltfLoader.load('models/jun_kun_carry_box.glb', (gltf) => {
+      console.log("jun_kun_carry_box.glb loaded successfully!");
+      junModel = gltf.scene;
+      junGroup.add(junModel);
+
+      mixer = new THREE.AnimationMixer(junModel);
+      gltf.animations.forEach((clip) => {
+        actions[clip.name] = mixer.clipAction(clip);
+      });
+
+      console.log("Loading bread_baguette.glb...");
+      gltfLoader.load('models/bread_baguette.glb', (b) => {
+        console.log("bread_baguette.glb loaded successfully!");
+        baguetteMesh = b.scene;
+        baguetteMesh.scale.set(0.35, 0.35, 0.35);
+        baguetteMesh.visible = false;
+        junGroup.add(baguetteMesh);
+
+        isModelReady = true;
+        window.isModelReady = true;
+        console.log("Sticker 3D Model ready!");
+        STAMP_DEFS.forEach((_, idx) => {
+          const b = document.getElementById(`badge-${idx}`);
+          if (b) b.innerText = '準備完了';
+        });
+        startLivePreviewLoop();
+      }, undefined, (err) => {
+        console.error("Failed to load bread_baguette.glb:", err);
+        window.modelLoadError = "bread_baguette: " + err;
+        // バゲット読み込み失敗でも純くんだけでスタンプは作れるので続行
+        isModelReady = true;
+        window.isModelReady = true;
+      });
+    }, undefined, (err) => {
+      console.error("Failed to load jun_kun_carry_box.glb:", err);
+      window.modelLoadError = "jun_kun_carry_box: " + err;
+    });
+
+    // --- 2Dテキスト＆エフェクト合成システム ---
+    // 漫符やフキダシ、文字をCanvasに綺麗に描画
+    function drawSticker2DOverlay(ctx, stampIndex, tNorm) {
+      const def = STAMP_DEFS[stampIndex];
+      const w = STAMP_WIDTH;
+      const h = STAMP_HEIGHT;
+      const cycle = Math.sin(tNorm * Math.PI * 2);
+
+      ctx.save();
+
+      // 共通文字描画ヘルパー（太い丸ゴシック、二重フチ取りで超見やすい！）
+      function drawThickText(text, x, y, fontSize, fillCol, strokeCol = '#FFFFFF', strokeW = 10, shadowCol = 'rgba(0,0,0,0.25)') {
+        ctx.font = `900 ${fontSize}px "M PLUS Rounded 1c", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // 影
+        if (shadowCol) {
+          ctx.fillStyle = shadowCol;
+          ctx.fillText(text, x + 2, y + 4);
+        }
+        // 白フチ
+        ctx.strokeStyle = strokeCol;
+        ctx.lineWidth = strokeW;
+        ctx.lineJoin = 'round';
+        ctx.strokeText(text, x, y);
+
+        // 文字色
+        ctx.fillStyle = fillCol;
+        ctx.fillText(text, x, y);
+      }
+
+      if (stampIndex === 0) {
+        // --- 01. こんにちは！ ---
+        // くるくる回る太陽マーク
+        const sunAngle = tNorm * Math.PI * 2;
+        const sunX = 250;
+        const sunY = 55;
+        ctx.save();
+        ctx.translate(sunX, sunY);
+        ctx.rotate(sunAngle);
+        // 太陽の光線
+        ctx.fillStyle = '#FF9800';
+        for (let i = 0; i < 8; i++) {
+          ctx.rotate(Math.PI / 4);
+          ctx.fillRect(-3, -24, 6, 10);
+        }
+        // 太陽の中心円
+        ctx.beginPath();
+        ctx.arc(0, 0, 16, 0, Math.PI * 2);
+        ctx.fillStyle = '#FF5722';
+        ctx.fill();
+        ctx.restore();
+
+        // 文字「こんにちは！」
+        drawThickText("こんに", 240, 115, 34, '#E65100', '#FFF', 11);
+        drawThickText("ちは！", 240, 155, 34, '#E65100', '#FFF', 11);
+      }
+      else if (stampIndex === 1) {
+        // --- 02. ありがとう！ ---
+        // 上部に感謝の太文字
+        drawThickText("ありがとう！", 160, 42, 36, '#D84315', '#FFF', 12);
+
+        // キラキラ星マーク
+        const stars = [
+          { x: 50, y: 70, scale: 0.8 + cycle * 0.2 },
+          { x: 270, y: 75, scale: 0.9 - cycle * 0.2 },
+          { x: 60, y: 190, scale: 0.7 + cycle * 0.25 },
+          { x: 260, y: 185, scale: 0.85 - cycle * 0.2 }
+        ];
+        stars.forEach((s) => {
+          ctx.save();
+          ctx.translate(s.x, s.y);
+          ctx.scale(s.scale, s.scale);
+          ctx.fillStyle = '#FFD54F';
+          ctx.beginPath();
+          for (let i = 0; i < 4; i++) {
+            ctx.lineTo(Math.cos((i * 90) * Math.PI / 180) * 16, Math.sin((i * 90) * Math.PI / 180) * 16);
+            ctx.lineTo(Math.cos((i * 90 + 45) * Math.PI / 180) * 5, Math.sin((i * 90 + 45) * Math.PI / 180) * 5);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        });
+      }
+      else if (stampIndex === 2) {
+        // --- 03. OK！ ---
+        // 弾ける青い集中線
+        ctx.save();
+        ctx.strokeStyle = '#0288D1';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        const okCx = 230, okCy = 135;
+        const lineCount = 10;
+        for (let i = 0; i < lineCount; i++) {
+          const ang = (i / lineCount) * Math.PI * 2;
+          const r1 = 65 + (i % 2 === 0 ? cycle * 6 : -cycle * 6);
+          const r2 = r1 + 18;
+          ctx.beginPath();
+          ctx.moveTo(okCx + Math.cos(ang) * r1, okCy + Math.sin(ang) * r1);
+          ctx.lineTo(okCx + Math.cos(ang) * r2, okCy + Math.sin(ang) * r2);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        // 「OK！」文字（青文字＋ピンク影）
+        const bounceY = okCy + cycle * 4;
+        drawThickText("OK!", okCx, bounceY, 64, '#0D47A1', '#FFF', 14, '#FF4081');
+      }
+      else if (stampIndex === 3) {
+        // --- 04. NO ---
+        // 赤い集中線
+        ctx.save();
+        ctx.strokeStyle = '#D32F2F';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        const noCx = 160, noCy = 145;
+        for (let i = 0; i < 12; i++) {
+          const ang = (i / 12) * Math.PI * 2;
+          const r1 = 90 + (i % 2 === 0 ? cycle * 8 : -cycle * 8);
+          const r2 = r1 + 24;
+          ctx.beginPath();
+          ctx.moveTo(noCx + Math.cos(ang) * r1, noCy + Math.sin(ang) * r1);
+          ctx.lineTo(noCx + Math.cos(ang) * r2, noCy + Math.sin(ang) * r2);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        // 「NO」文字
+        drawThickText("NO", 160, 230, 60, '#111111', '#FFF', 14, 'rgba(211,47,47,0.5)');
+      }
+      else if (stampIndex === 4) {
+        // --- 05. 急ぎます！ ---
+        // スピード集中線＆土煙
+        ctx.save();
+        ctx.fillStyle = 'rgba(200, 170, 140, 0.7)';
+        // 足元の土煙もくもく
+        const puff1 = (tNorm * 3) % 1;
+        ctx.beginPath(); ctx.arc(100 - puff1 * 40, 240 - puff1 * 10, 10 + puff1 * 12, 0, Math.PI * 2); ctx.fill();
+        const puff2 = ((tNorm * 3) + 0.5) % 1;
+        ctx.beginPath(); ctx.arc(90 - puff2 * 40, 245 - puff2 * 8, 8 + puff2 * 10, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+
+        // 「急ぎます！」文字
+        ctx.save();
+        ctx.translate(160, 42);
+        ctx.rotate(-0.06); // 少しスピード感のある傾き
+        drawThickText("急ぎます！", 0, 0, 38, '#E65100', '#FFF', 12, '#BF360C');
+        ctx.restore();
+      }
+      else if (stampIndex === 5) {
+        // --- 06. いただきます ---
+        // ピンクの可愛い吹き出し
+        const bubX = 235, bubY = 100;
+        ctx.save();
+        ctx.fillStyle = '#FFF';
+        ctx.strokeStyle = '#F06292';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.roundRect(bubX - 70, bubY - 55, 140, 100, 20);
+        ctx.fill();
+        ctx.stroke();
+
+        // 吹き出しのしっぽ
+        ctx.beginPath();
+        ctx.moveTo(bubX - 70, bubY + 10);
+        ctx.lineTo(bubX - 95, bubY + 25);
+        ctx.lineTo(bubX - 65, bubY + 28);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        drawThickText("いただき", bubX, bubY - 18, 26, '#E91E63', '#FFF', 4, null);
+        drawThickText("ます", bubX, bubY + 18, 28, '#E91E63', '#FFF', 4, null);
+        ctx.restore();
+
+        // 音符マーク
+        ctx.save();
+        ctx.fillStyle = '#BA68C8';
+        ctx.font = '900 24px sans-serif';
+        ctx.fillText("🎵", 60 + cycle * 5, 60 - cycle * 8);
+        ctx.restore();
+      }
+      else if (stampIndex === 6) {
+        // --- 07. お疲れさまです ---
+        // 温かい湯気
+        ctx.save();
+        ctx.strokeStyle = '#FF8A65';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        for (let i = 0; i < 3; i++) {
+          const steamX = 140 + i * 20;
+          const steamY = 130 - (tNorm * 40 + i * 15) % 40;
+          ctx.beginPath();
+          ctx.moveTo(steamX, steamY);
+          ctx.bezierCurveTo(steamX - 8, steamY - 12, steamX + 8, steamY - 20, steamX, steamY - 30);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        // 「お疲れさまです」文字
+        drawThickText("お疲れ", 240, 120, 32, '#2E7D32', '#FFF', 10);
+        drawThickText("さまです", 240, 160, 32, '#2E7D32', '#FFF', 10);
+      }
+      else if (stampIndex === 7) {
+        // --- 08. やったー！ ---
+        // 飛び散るカラフル紙吹雪
+        const confetti = [
+          { x: 50, y: 70, c: '#E91E63' },
+          { x: 90, y: 50, c: '#4CAF50' },
+          { x: 230, y: 45, c: '#FF9800' },
+          { x: 270, y: 80, c: '#2196F3' },
+          { x: 45, y: 150, c: '#FFEB3B' },
+          { x: 280, y: 160, c: '#9C27B0' }
+        ];
+        confetti.forEach((p, idx) => {
+          ctx.save();
+          ctx.fillStyle = p.c;
+          const py = (p.y + (tNorm * 80 + idx * 25)) % 240;
+          ctx.fillRect(p.x, py, 9, 6);
+          ctx.restore();
+        });
+
+        // 「やったー！」文字
+        const bounce = cycle * 6;
+        drawThickText("やったー！", 160, 48 + bounce, 40, '#D81B60', '#FFF', 12, '#FF80AB');
+      }
+
+      ctx.restore();
+    }
+
+    // --- フレームレンダリング関数（Playwright & ライブプレビュー共通） ---
+    // 指定したスタンプ、指定したフレーム番号（0〜19）をオフスクリーンCanvasに描画してBase64を返す
+    window.renderSingleFrame = function(stampIndex, frameIdx) {
+      if (!isModelReady) return null;
+      const def = STAMP_DEFS[stampIndex];
+      const tNorm = frameIdx / TOTAL_FRAMES; // 0.0 ~ 0.95
+      const timeSec = tNorm * DURATION_SEC;  // 0.0 ~ 1.9s
+
+      // 1. 3Dモデルのポーズとアニメーション時間を設定
+      // 全てのアクションを停止して目的のアクションを時間設定
+      Object.values(actions).forEach(a => a.stop());
+      const act = actions[def.anim];
+      if (act) {
+        act.reset();
+        act.play();
+        mixer.setTime(timeSec);
+      }
+
+      // スタンプ固有のキャラクター配置＆追加演出
+      junGroup.position.set(0, -0.62, 0);
+      junGroup.rotation.set(0, 0, 0);
+      junGroup.scale.set(0.68, 0.68, 0.68);
+      if (baguetteMesh) baguetteMesh.visible = false;
+
+      if (stampIndex === 0) { // こんにちは！ (Wave)
+        junGroup.position.set(-0.25, -0.62, 0);
+        junGroup.rotation.y = 0.15;
+      }
+      else if (stampIndex === 1) { // ありがとう！ (Bow)
+        junGroup.position.set(0, -0.62, 0);
+        junGroup.rotation.y = 0;
+      }
+      else if (stampIndex === 2) { // OK！
+        junGroup.position.set(-0.35, -0.62, 0);
+        // 元気にコクコク頷く
+        junModel.rotation.x = Math.sin(tNorm * Math.PI * 4) * 0.18;
+      }
+      else if (stampIndex === 3) { // NO
+        junGroup.position.set(0, -0.62, 0);
+        // イヤイヤと首を振る
+        junModel.rotation.y = Math.sin(tNorm * Math.PI * 4) * 0.28;
+      }
+      else if (stampIndex === 4) { // 急ぎます！ (Run)
+        junGroup.position.set(0.12, -0.62, 0);
+        junGroup.rotation.y = -0.3; // 前のめり
+      }
+      else if (stampIndex === 5) { // いただきます
+        junGroup.position.set(-0.32, -0.62, 0);
+        // もぐもぐ上下にポヨンポヨン
+        junGroup.position.y = -0.62 + Math.abs(Math.sin(tNorm * Math.PI * 4)) * 0.06;
+        if (baguetteMesh) {
+          baguetteMesh.visible = true;
+          baguetteMesh.position.set(-0.32, 0.05 + junGroup.position.y + 0.62, 0.35);
+          baguetteMesh.rotation.set(0.2, 0.1, 0.6);
+        }
+      }
+      else if (stampIndex === 6) { // お疲れさまです
+        junGroup.position.set(-0.30, -0.62, 0);
+        junModel.rotation.z = Math.sin(tNorm * Math.PI * 2) * 0.08; // 首を優しく傾げる
+      }
+      else if (stampIndex === 7) { // やったー！
+        junGroup.position.set(0, -0.62 + Math.abs(Math.sin(tNorm * Math.PI * 4)) * 0.12, 0); // ジャンプ！
+        junGroup.rotation.y = Math.sin(tNorm * Math.PI * 2) * 0.15;
+      }
+
+      // 2. 3DシーンをオフスクリーンCanvasへレンダリング
+      renderer.render(scene, camera);
+
+      // 3. 2Dエフェクト＆文字を合成キャンバスへ描画
+      composeCtx.clearRect(0, 0, STAMP_WIDTH, STAMP_HEIGHT);
+      composeCtx.drawImage(offscreenCanvas, 0, 0);
+      drawSticker2DOverlay(composeCtx, stampIndex, tNorm);
+
+      return composeCanvas.toDataURL('image/png');
+    };
+
+    // ヘッドレスPlaywrightから一括呼び出し可能な関数
+    window.renderAllFramesForSticker = function(stampIndex) {
+      const frames = [];
+      for (let i = 0; i < TOTAL_FRAMES; i++) {
+        frames.push(window.renderSingleFrame(stampIndex, i));
+      }
+      return frames;
+    };
+
+    // --- ブラウザ上でのリアルタイム・ライブプレビュー ---
+    let liveFrame = 0;
+    function startLivePreviewLoop() {
+      setInterval(() => {
+        if (!isModelReady) return;
+        STAMP_DEFS.forEach((_, idx) => {
+          const pCanvas = previewCanvases[idx];
+          const pCtx = pCanvas.getContext('2d');
+
+          // フレームをレンダリング
+          window.renderSingleFrame(idx, liveFrame);
+
+          // プレビューキャンバスに転写
+          pCtx.clearRect(0, 0, STAMP_WIDTH, STAMP_HEIGHT);
+          pCtx.drawImage(composeCanvas, 0, 0);
+        });
+        liveFrame = (liveFrame + 1) % TOTAL_FRAMES;
+      }, 100); // 10fps
+    }
+  </script>
+</body>
+</html>
