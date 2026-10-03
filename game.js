@@ -1429,14 +1429,17 @@ function triggerOpeningWave() {
   gameState.targetX = 0;
   if (junKunGroup) {
     junKunGroup.position.x = 0;
-    junKunGroup.rotation.y = 0;
+    junKunGroup.rotation.y = 0; // カメラ（正面）をしっかり向く
   }
   sounds.playWave();
   if (animations['Wave']) {
-    playAnimation('Wave', 0.2, false);
+    playAnimation('Wave', 0.15, true); // 手をしっかり大きく振る！
   }
 
-  // 1.2秒手を振った後、地面の籠を拾い上げてゲームスタート！
+  // 純くんの頭上に「👋 いらっしゃいませ！」の可愛い吹き出しポップアップ！
+  showScorePopup(container.clientWidth * 0.5 - 75, container.clientHeight * 0.38, "👋 いらっしゃいませ！", "#E65100");
+
+  // 1.6秒しっかり手を振ってご挨拶した後、地面の籠を抱え上げてゲームスタート！
   setTimeout(() => {
     if (groundBasket) {
       scene.remove(groundBasket);
@@ -1459,7 +1462,7 @@ function triggerOpeningWave() {
       gameState.isOpening = false;
       gameState.isRunning = true;
     }, 400);
-  }, 1200);
+  }, 1600);
 }
 
 // --- 10. ゲーム開始 & 終了処理 ---
