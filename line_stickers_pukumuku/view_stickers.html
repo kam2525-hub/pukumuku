@@ -6,61 +6,94 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
     body {
-      background: #7AC0D6; /* LINEトーク画面の定番背景色 */
+      background: #7AC0D6; /* LINEトーク画面の定番水色 */
       color: #333;
       padding: 30px 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
+      transition: background 0.3s;
     }
     header {
       background: #FFFFFF;
-      padding: 20px 30px;
+      padding: 24px 30px;
       border-radius: 16px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
       text-align: center;
-      max-width: 800px;
+      max-width: 900px;
       width: 100%;
       margin-bottom: 24px;
     }
-    h1 { font-size: 22px; color: #2E1505; margin-bottom: 8px; }
-    p.desc { font-size: 14px; color: #666; line-height: 1.6; }
-    .bg-toggle {
-      margin-top: 14px;
+    h1 { font-size: 24px; color: #2E1505; margin-bottom: 8px; }
+    p.desc { font-size: 14px; color: #555; line-height: 1.6; }
+    .controls-wrap {
+      margin-top: 16px;
       display: flex;
+      flex-wrap: wrap;
       justify-content: center;
-      gap: 10px;
+      gap: 12px;
+    }
+    .btn-group {
+      display: flex;
+      gap: 6px;
+      background: #F0F0F0;
+      padding: 4px;
+      border-radius: 24px;
     }
     .btn {
       padding: 6px 16px;
-      border: 1px solid #CCC;
+      border: none;
       border-radius: 20px;
       cursor: pointer;
-      background: #FFF;
+      background: transparent;
       font-size: 13px;
       font-weight: bold;
+      color: #555;
+      transition: all 0.2s;
     }
     .btn.active {
       background: #06C755;
       color: #FFF;
-      border-color: #06C755;
+      box-shadow: 0 2px 8px rgba(6,199,85,0.3);
+    }
+    .main-tab-wrap {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      background: #FFF;
+      padding: 20px;
+      border-radius: 16px;
+      max-width: 900px;
+      width: 100%;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+      margin-bottom: 24px;
+    }
+    .sub-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     .container {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
       gap: 24px;
-      max-width: 1100px;
+      max-width: 1160px;
       width: 100%;
     }
     .stamp-card {
-      background: rgba(255, 255, 255, 0.92);
+      background: rgba(255, 255, 255, 0.96);
       border-radius: 16px;
       padding: 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-      backdrop-filter: blur(10px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .stamp-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.15);
     }
     .img-wrap {
       width: 320px;
@@ -85,6 +118,16 @@
       font-size: 16px;
       color: #333;
     }
+    .cam-tag {
+      display: inline-block;
+      margin-top: 4px;
+      padding: 2px 10px;
+      background: #E8F5E9;
+      color: #2E7D32;
+      font-size: 11px;
+      font-weight: bold;
+      border-radius: 8px;
+    }
     .tag {
       display: inline-block;
       margin-top: 4px;
@@ -93,25 +136,7 @@
       color: white;
       font-size: 11px;
       font-weight: bold;
-      border-radius: 10px;
-    }
-    .main-tab-wrap {
-      display: flex;
-      gap: 20px;
-      justify-content: center;
-      margin-top: 16px;
-      background: #FFF;
-      padding: 20px;
-      border-radius: 16px;
-      max-width: 800px;
-      width: 100%;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-      margin-bottom: 24px;
-    }
-    .sub-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      border-radius: 8px;
     }
   </style>
 </head>
@@ -119,25 +144,35 @@
   <header>
     <h1>🥖 パン工房プクムク 純利益 公式LINEアニメーションスタンプ</h1>
     <p class="desc">
-      LINE Creators Market 規定に完全準拠した APNG 形式のアニメーションスタンプです。<br>
-      透過背景・解像度320×270px・300KB以下・2秒ループ×2回（計4秒）を達成しています。
+      Blender（純くん.blend）のくり抜き顔・胸のロゴを完全同期し、スタンプごとに多彩なカメラワークを適用！<br>
+      全コマ同一サイズ（320×270px）の正統APNG規格により、チカチカ・点滅を完全に根絶しています。
     </p>
-    <div class="bg-toggle">
-      <button class="btn active" onclick="setBg('#7AC0D6')">LINEトーク水色</button>
-      <button class="btn" onclick="setBg('#FFFFFF')">白背景</button>
-      <button class="btn" onclick="setBg('#1E1E1E')">ダークモード</button>
-      <button class="btn" onclick="setBg('checker')">市松透過</button>
+
+    <div class="controls-wrap">
+      <!-- 再生モード切替 -->
+      <div class="btn-group">
+        <button class="btn active" id="btn-loop" onclick="setMode('loop')">🔄 常時無限ループ再生</button>
+        <button class="btn" id="btn-apng" onclick="setMode('apng')">📱 LINE公式APNG再生</button>
+      </div>
+
+      <!-- 背景切替 -->
+      <div class="btn-group">
+        <button class="btn active" onclick="setBg('#7AC0D6', event)">LINEトーク水色</button>
+        <button class="btn" onclick="setBg('#FFFFFF', event)">白背景</button>
+        <button class="btn" onclick="setBg('#1E1E1E', event)">ダークモード</button>
+        <button class="btn" onclick="setBg('checker', event)">市松透過</button>
+      </div>
     </div>
   </header>
 
   <div class="main-tab-wrap">
     <div class="sub-item">
       <span style="font-weight: bold; font-size: 13px; margin-bottom: 6px;">メイン画像 (main.png: 240×240)</span>
-      <img src="main.png" alt="main" width="120" height="120" style="border: 1px solid #DDD; border-radius: 8px;">
+      <img id="img-main" src="main.png" alt="main" width="120" height="120" style="border: 1px solid #DDD; border-radius: 8px;">
     </div>
     <div class="sub-item">
       <span style="font-weight: bold; font-size: 13px; margin-bottom: 6px;">タブ画像 (tab.png: 96×74)</span>
-      <img src="tab.png" alt="tab" width="96" height="74" style="border: 1px solid #DDD; border-radius: 8px; margin-top: 23px;">
+      <img id="img-tab" src="tab.png" alt="tab" width="96" height="74" style="border: 1px solid #DDD; border-radius: 8px; margin-top: 23px;">
     </div>
   </div>
 
@@ -145,48 +180,86 @@
 
   <script>
     const STAMPS = [
-      { file: "01.png", title: "こんにちは！", desc: "手を振りながら太陽がくるくる" },
-      { file: "02.png", title: "ありがとう！", desc: "お辞儀（ぺこり）＋ハート浮遊" },
-      { file: "03.png", title: "OK！", desc: "大きく頷いて親指グッ＋キラキラ" },
-      { file: "04.png", title: "NO", desc: "首を横に振る＋汗たらりマーク" },
-      { file: "05.png", title: "急ぎます！", desc: "小走りでパン配達＋土煙モクモク" },
-      { file: "06.png", title: "いただきます♪", desc: "バゲットを抱えて目を輝かせる" },
-      { file: "07.png", title: "お疲れさまです", desc: "パンを差し入れ＋湯気ほっこり" },
-      { file: "08.png", title: "やったー！", desc: "歓喜のジャンプ＋紙吹雪パーン" },
+      { id: "01", title: "こんにちは！", cam: "バストアップ（表情＆手振り迫力）", desc: "右手を高く振って首かしげ＋太陽" },
+      { id: "02", title: "ありがとう！", cam: "見下ろしハイアングル（お辞儀）", desc: "深々とお辞儀（ペコリ）＋ハート" },
+      { id: "03", title: "OK！", cam: "右斜め前アップ（親指グッ）", desc: "前に突き出した手と力強い頷き＋星" },
+      { id: "04", title: "NO", cam: "顔ド迫力クローズアップ", desc: "イヤイヤ！と左右に激しく首振り＋汗" },
+      { id: "05", title: "急ぎます！", cam: "斜め横サイドビュー（疾走感）", desc: "腕と脚を前後に大きく振ってダッシュ！" },
+      { id: "06", title: "いただきます♪", cam: "見上げバストアップ（ワクワク）", desc: "胸の前で手を合わせて上下バウンド" },
+      { id: "07", title: "お疲れさまです", cam: "癒やしのバストアップ", desc: "両手を差し伸べて首をコテンと傾げる" },
+      { id: "08", title: "やったー！", cam: "見上げローアングル（大ジャンプ）", desc: "画面下から大ジャンプして万歳＋紙吹雪" },
     ];
 
-    const v = Date.now();
-    // main.png & tab.png にもキャッシュバスター
-    document.querySelectorAll('.sub-item img').forEach(img => {
-      img.src = img.getAttribute('src') + '?v=' + v;
-    });
+    let currentMode = 'loop'; // デフォルトは止まらない無限ループ再生！
+    const baseTime = Date.now();
 
-    const container = document.getElementById('stamp-container');
-    STAMPS.forEach((s) => {
-      const card = document.createElement('div');
-      card.className = 'stamp-card';
-      card.innerHTML = `
-        <div class="img-wrap">
-          <img src="${s.file}?v=${v}" alt="${s.title}">
-        </div>
-        <div class="meta">
-          <div class="filename">${s.file} : ${s.title}</div>
-          <p style="font-size: 12px; color: #666; margin-top: 2px;">${s.desc}</p>
-          <span class="tag">APNG 320×270px (透過RGBA・チカチカ完全ゼロ)</span>
-        </div>
-      `;
-      container.appendChild(card);
-    });
+    function renderCards() {
+      const container = document.getElementById('stamp-container');
+      container.innerHTML = '';
+      
+      STAMPS.forEach((s) => {
+        const ext = currentMode === 'loop' ? 'gif' : 'png';
+        const src = `${s.id}.${ext}?v=${baseTime}`;
+        
+        const card = document.createElement('div');
+        card.className = 'stamp-card';
+        card.onclick = () => replayCard(s.id);
+        card.innerHTML = `
+          <div class="img-wrap">
+            <img id="stamp-img-${s.id}" src="${src}" alt="${s.title}">
+          </div>
+          <div class="meta">
+            <div class="filename">${s.id}.${ext} : ${s.title}</div>
+            <div class="cam-tag">📷 ${s.cam}</div>
+            <p style="font-size: 12px; color: #666; margin-top: 4px;">${s.desc}</p>
+            <span class="tag">透過RGBA・チカチカ完全ゼロ</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
 
-    function setBg(bg) {
-      document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
-      event.target.classList.add('active');
+      // main & tab にもキャッシュバスター
+      document.getElementById('img-main').src = 'main.png?v=' + baseTime;
+      document.getElementById('img-tab').src = 'tab.png?v=' + baseTime;
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      document.getElementById('btn-loop').classList.toggle('active', mode === 'loop');
+      document.getElementById('btn-apng').classList.toggle('active', mode === 'apng');
+      renderCards();
+    }
+
+    // クリックで先頭から再再生
+    function replayCard(id) {
+      const img = document.getElementById(`stamp-img-${id}`);
+      if (!img) return;
+      const ext = currentMode === 'loop' ? 'gif' : 'png';
+      img.src = `${id}.${ext}?v=${Date.now()}`;
+    }
+
+    // APNGモード時、4秒ごとに止まらないよう自動で先頭からループリプレイ
+    setInterval(() => {
+      if (currentMode === 'apng') {
+        STAMPS.forEach((s) => replayCard(s.id));
+      }
+    }, 4200);
+
+    function setBg(bg, ev) {
+      document.querySelectorAll('.btn-group button').forEach(b => {
+        if (b.innerText.includes('背景') || b.innerText.includes('モード') || b.innerText.includes('水色') || b.innerText.includes('市松')) {
+          b.classList.remove('active');
+        }
+      });
+      if (ev) ev.target.classList.add('active');
       if (bg === 'checker') {
         document.body.style.background = 'repeating-conic-gradient(#CCC 0% 25%, #FFF 0% 50%) 50% / 20px 20px';
       } else {
         document.body.style.background = bg;
       }
     }
+
+    renderCards();
   </script>
 </body>
 </html>
