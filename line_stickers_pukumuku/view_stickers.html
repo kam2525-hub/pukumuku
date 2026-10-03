@@ -150,10 +150,16 @@
       { file: "03.png", title: "OK！", desc: "大きく頷いて親指グッ＋キラキラ" },
       { file: "04.png", title: "NO", desc: "首を横に振る＋汗たらりマーク" },
       { file: "05.png", title: "急ぎます！", desc: "小走りでパン配達＋土煙モクモク" },
-      { file: "06.png", title: "いただきます", desc: "バゲットを抱えて目を輝かせる" },
+      { file: "06.png", title: "いただきます♪", desc: "バゲットを抱えて目を輝かせる" },
       { file: "07.png", title: "お疲れさまです", desc: "パンを差し入れ＋湯気ほっこり" },
       { file: "08.png", title: "やったー！", desc: "歓喜のジャンプ＋紙吹雪パーン" },
     ];
+
+    const v = Date.now();
+    // main.png & tab.png にもキャッシュバスター
+    document.querySelectorAll('.sub-item img').forEach(img => {
+      img.src = img.getAttribute('src') + '?v=' + v;
+    });
 
     const container = document.getElementById('stamp-container');
     STAMPS.forEach((s) => {
@@ -161,12 +167,12 @@
       card.className = 'stamp-card';
       card.innerHTML = `
         <div class="img-wrap">
-          <img src="${s.file}" alt="${s.title}">
+          <img src="${s.file}?v=${v}" alt="${s.title}">
         </div>
         <div class="meta">
           <div class="filename">${s.file} : ${s.title}</div>
           <p style="font-size: 12px; color: #666; margin-top: 2px;">${s.desc}</p>
-          <span class="tag">APNG 320×270px (透過)</span>
+          <span class="tag">APNG 320×270px (透過RGBA・チカチカ完全ゼロ)</span>
         </div>
       `;
       container.appendChild(card);
