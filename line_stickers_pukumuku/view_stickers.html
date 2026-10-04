@@ -20,12 +20,23 @@
       border-radius: 16px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.12);
       text-align: center;
-      max-width: 900px;
+      max-width: 960px;
       width: 100%;
       margin-bottom: 24px;
     }
     h1 { font-size: 24px; color: #2E1505; margin-bottom: 8px; }
     p.desc { font-size: 14px; color: #555; line-height: 1.6; }
+    .badge {
+      display: inline-block;
+      padding: 3px 12px;
+      background: #FFF3E0;
+      color: #E65100;
+      font-size: 12px;
+      font-weight: bold;
+      border-radius: 12px;
+      margin-top: 8px;
+      border: 1px solid #FFE0B2;
+    }
     .controls-wrap {
       margin-top: 16px;
       display: flex;
@@ -63,7 +74,7 @@
       background: #FFF;
       padding: 20px;
       border-radius: 16px;
-      max-width: 900px;
+      max-width: 960px;
       width: 100%;
       box-shadow: 0 4px 16px rgba(0,0,0,0.1);
       margin-bottom: 24px;
@@ -128,6 +139,16 @@
       font-weight: bold;
       border-radius: 8px;
     }
+    .illust-tag {
+      display: inline-block;
+      margin-top: 4px;
+      padding: 2px 10px;
+      background: #FFF8E1;
+      color: #F57F17;
+      font-size: 11px;
+      font-weight: bold;
+      border-radius: 8px;
+    }
     .tag {
       display: inline-block;
       margin-top: 4px;
@@ -143,9 +164,11 @@
 <body>
   <header>
     <h1>🥖 パン工房プクムク 純利益 公式LINEアニメーションスタンプ（全16種）</h1>
-    <p class="desc">
-      Blender（純くん.blend）のくり抜き顔・胸のロゴを完全同期し、16種類それぞれ専用のカメラワーク＆モーションを実装！<br>
-      全コマ同一サイズ（320×270px）の正統APNG規格により、チカチカ・点滅を完全に根絶しています。
+    <div class="badge">✨ 著作権安全版「PUKU MUKU」モデル（純くん一時保存.blend）完全同期</div>
+    <p class="desc" style="margin-top: 8px;">
+      脚と靴のメッシュ結合により<b>脚と足の分離を100%根絶</b>！全16種類それぞれに<b>完全に独立した固有アニメーション</b>を実装！<br>
+      焼きたてパン（クロワッサン、メロンパン、バゲット）や集中線・大土煙・紙吹雪などの<b>豪華手描きイラスト演出</b>を搭載。<br>
+      全コマ同一サイズ（320×270px）の正統APNG規格により、チカチカ・点滅ゼロ＆LINE審査規定（300KB以下）を全種達成しています。
     </p>
 
     <div class="controls-wrap">
@@ -180,22 +203,22 @@
 
   <script>
     const STAMPS = [
-      { id: "01", title: "こんにちは！", cam: "バストアップ（表情＆手振り迫力）", desc: "右手を高く振って首かしげ＋太陽" },
-      { id: "02", title: "ありがとう！", cam: "見下ろしハイアングル（お辞儀）", desc: "深々とお辞儀（ペコリ）＋ハート" },
-      { id: "03", title: "OK！", cam: "右斜め前アップ（親指グッ）", desc: "首取れ解消！前に突き出した手と力強い頷き＋星" },
-      { id: "04", title: "NO", cam: "顔ド迫力クローズアップ", desc: "枠切れ防止マージン確保！左右に激しく首振り＋汗" },
-      { id: "05", title: "急ぎます！", cam: "斜め横サイドビュー（疾走感）", desc: "足抜け解消！靴が完全に連動して元気に疾走ダッシュ！" },
-      { id: "06", title: "いただきます♪", cam: "見上げバストアップ（ワクワク）", desc: "胸の前で手を合わせて上下バウンド＋音符" },
-      { id: "07", title: "お疲れさまです", cam: "癒やしのバストアップ", desc: "両手を差し伸べて首をコテンと傾げる＋湯気" },
-      { id: "08", title: "やったー！", cam: "見上げローアングル（大ジャンプ）", desc: "画面下から大ジャンプして万歳＋紙吹雪" },
-      { id: "09", title: "考え中...", cam: "斜めバストアップ（あごに手）", desc: "首をかしげて考え込むポーズ＋？マーク" },
-      { id: "10", title: "プンプン！", cam: "正面バストアップ（腰に手）", desc: "腰に手を当てて足踏みぷんぷん＋怒りマーク" },
-      { id: "11", title: "悲しい...", cam: "見下ろしハイアングル（しょんぼり）", desc: "肩を落としてガックリうなだれる＋涙しずく" },
-      { id: "12", title: "イエーイ！", cam: "躍動感サイドステップ（ノリノリ）", desc: "両手を上げて左右にリズミカルにダンス＋音符" },
-      { id: "13", title: "ポカ〜ン", cam: "正面ミディアムショット（呆然）", desc: "目を丸くして首を斜めに静止＋点々アニメ" },
-      { id: "14", title: "いらっしゃいませ！", cam: "お出迎えフロントアングル", desc: "両手を広げて丁寧にお辞儀＋キラキラ" },
-      { id: "15", title: "ブルブル...", cam: "ぎゅっと縮こまりアングル", desc: "寒さ・緊張で小刻みに震える＋寒気マーク" },
-      { id: "16", title: "一発逆転！", cam: "力強いローアングル（ガッツポーズ）", desc: "拳を高く突き上げて気合注入＋闘志の炎" }
+      { id: "01", title: "こんにちは！", cam: "斜めバストアップ", desc: "右手を高く振って大きくバイバイ手振り＋頭コテンコテン", illust: "🥐 焼きたてクロワッサン＆回転する太陽" },
+      { id: "02", title: "ありがとう！", cam: "見下ろしハイアングル", desc: "深々とお辞儀からパッと顔を上げて満面の笑みで両手を開く", illust: "🍈 メロンパン＆舞い上がるピンクのハート群" },
+      { id: "03", title: "OK！", cam: "右斜め前アップ", desc: "前に身を乗り出して右腕突き出し親指グッ＋力強い頷き", illust: "✨ 漫画風集中線＆輝く大星スパークル" },
+      { id: "04", title: "NO", cam: "顔ド迫力アップ", desc: "両腕を胸の前で交差して大きな「×」＋激しい首振り", illust: "❄️ 青ざめタテ線＆冷や汗ドロップ" },
+      { id: "05", title: "急ぎます！", cam: "斜め25度サイドビュー", desc: "前傾姿勢で腕と足をダイナミックに前後に猛ダッシュ！", illust: "💨 モクモク多重大土煙＆疾走スピードライン" },
+      { id: "06", title: "いただきます♪", cam: "見上げバストアップ", desc: "胸の前で両手をパチンと合掌し、ワクワクピョンピョン跳ねる", illust: "🥖 フランスパン＆カラフルに踊る音符" },
+      { id: "07", title: "お疲れさまです", cam: "癒やしバストアップ", desc: "お盆やカップを差し出すように優しく両手を前に差し出す", illust: "☕ 湯気マグカップ＆ゆらゆら二重湯気" },
+      { id: "08", title: "やったー！", cam: "見上げローアングル", desc: "グッとしゃがんでから画面いっぱいに大ジャンプして大の字！", illust: "🎉 画面いっぱいのカラフル紙吹雪＆星屑" },
+      { id: "09", title: "考え中...", cam: "斜めバストアップ", desc: "あごに右手を当て、左手で肘を支え、うーんと首を回して悩む", illust: "💭 思考の吹き出し＆ゆらゆら動く立体「？」" },
+      { id: "10", title: "プンプン！", cam: "ウエストショット", desc: "両手を腰に当てて仁王立ち、左右の足を交互に足踏みドンドン！", illust: "💢 噴き出す怒り蒸気＆真っ赤な怒りマーク" },
+      { id: "11", title: "ごめんなさい...", cam: "見下ろしハイアングル", desc: "両手を前で揃えてガックリうなだれ、肩を落として小さく震える", illust: "🌧️ 落ち込むモヤモヤ雨雲＆ポロポロ流れる涙" },
+      { id: "12", title: "イエーイ！", cam: "全身フルショット", desc: "左右にステップを踏みながら両手を交互にウェーブさせるダンス", illust: "🪩 ミラーボール光線＆飛び交うカラフル星屑" },
+      { id: "13", title: "よろしく！", cam: "正面バストアップ", desc: "右手を額にピッとおいてキリッと敬礼ポーズ、背筋ピシッ", illust: "🌟 キラーン！光彩スパークル＆青空星" },
+      { id: "14", title: "いらっしゃいませ！", cam: "お出迎えフロント", desc: "両手を広げてお店の前でお出迎えの丁寧なお辞儀", illust: "🍞 パン工房PUKUMUKU木製看板＆キラキラ" },
+      { id: "15", title: "おやすみなさい", cam: "手枕バストアップ", desc: "両手を顔の横に当てて手枕ポーズ、首をコテンと倒してすやすや眠る", illust: "🌙 優しい三日月＆ふわふわ浮かぶZzz..." },
+      { id: "16", title: "一発逆転！", cam: "力強いあおりローアングル", desc: "ぐっと構えてから右拳を天高く突き上げる熱血ガッツポーズ！", illust: "🔥 メラメラ燃え盛る3重の闘志の炎＆散る火花" }
     ];
 
     let currentMode = 'loop'; // デフォルトは止まらない無限ループ再生！
@@ -218,9 +241,10 @@
           </div>
           <div class="meta">
             <div class="filename">${s.id}.${ext} : ${s.title}</div>
-            <div class="cam-tag">📷 ${s.cam}</div>
+            <div class="cam-tag">📷 ${s.cam}</div><br>
+            <div class="illust-tag">${s.illust}</div>
             <p style="font-size: 12px; color: #666; margin-top: 4px;">${s.desc}</p>
-            <span class="tag">透過RGBA・チカチカ完全ゼロ</span>
+            <span class="tag">脚と足完全一体化・チカチカ完全ゼロ</span>
           </div>
         `;
         container.appendChild(card);
@@ -271,4 +295,3 @@
   </script>
 </body>
 </html>
-

@@ -110,4 +110,5 @@ InitTestScene*.unity*
 
 # Stamp render temporary directories
 temp_*/
-__pycache__/
+test_cam_frames/
+__pycache__/
