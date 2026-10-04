@@ -113,6 +113,9 @@
       align-items: center;
       justify-content: center;
       position: relative;
+      background: repeating-conic-gradient(#eef1f4 0% 25%, #ffffff 0% 50%) 50% / 16px 16px;
+      border-radius: 12px;
+      border: 1px solid #e0e4e8;
     }
     .img-wrap img {
       max-width: 100%;
@@ -174,8 +177,8 @@
     <div class="controls-wrap">
       <!-- 再生モード切替 -->
       <div class="btn-group">
-        <button class="btn active" id="btn-loop" onclick="setMode('loop')">🔄 常時無限ループ再生</button>
-        <button class="btn" id="btn-apng" onclick="setMode('apng')">📱 LINE公式APNG再生</button>
+        <button class="btn active" id="btn-apng" onclick="setMode('apng')">📱 LINE公式透過APNG再生（推奨・最高品質）</button>
+        <button class="btn" id="btn-loop" onclick="setMode('loop')">🔄 常時無限ループGIF再生</button>
       </div>
 
       <!-- 背景切替 -->
@@ -221,7 +224,7 @@
       { id: "16", title: "がんばります！", cam: "左下拳突き上げ（左上文字・背後〜右上メラメラ炎）", desc: "拳を天高く力強く突き上げる熱血連続ガッツポーズ！", illust: "🔥 メラメラ燃え盛る3重の闘志の炎" }
     ];
 
-    let currentMode = 'loop'; // デフォルトは止まらない無限ループ再生！
+    let currentMode = 'apng'; // デフォルトはLINE公式透過APNG再生！
     const baseTime = Date.now();
 
     function renderCards() {

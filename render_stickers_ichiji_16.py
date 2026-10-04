@@ -88,7 +88,7 @@ bpy.context.scene.render.film_transparent = True
 bpy.context.scene.render.image_settings.file_format = 'PNG'
 bpy.context.scene.render.image_settings.color_mode = 'RGBA'
 
-# 6. ワールド環境光とマルチライティング（全アングル・真横でも影で真っ黒にならず超鮮明！）
+# 6. ワールド環境光とマルチライティング（白飛びゼロ・黒潰れゼロの最適露出＆自然な立体感）
 world = bpy.context.scene.world
 if not world:
     world = bpy.data.worlds.new('World')
@@ -96,8 +96,8 @@ if not world:
 world.use_nodes = True
 bg = world.node_tree.nodes.get('Background')
 if bg:
-    bg.inputs['Color'].default_value = (0.92, 0.92, 0.96, 1.0)
-    bg.inputs['Strength'].default_value = 0.85
+    bg.inputs['Color'].default_value = (0.85, 0.85, 0.90, 1.0)
+    bg.inputs['Strength'].default_value = 0.45 # 白飛びを抑えた柔らかい環境光
 
 for light in [o for o in bpy.data.objects if o.type == 'LIGHT']:
     bpy.data.objects.remove(light)
@@ -110,10 +110,18 @@ def add_sun(name, energy, rot_deg):
     o.rotation_euler = tuple(math.radians(a) for a in rot_deg)
     bpy.context.collection.objects.link(o)
 
-add_sun('SunFront', 3.2, (90, 0, -90)) # 正面 (-X)
-add_sun('SunRight', 3.6, (90, 0, 0))   # 右横 (+Y) -> 05番のサイドビューを強力に明るく！
-add_sun('SunLeft', 2.4, (90, 0, 180))  # 左横 (-Y)
-add_sun('SunTop', 2.5, (45, 0, -45))   # 上から
+add_sun('SunFront', 2.8, (90, 0, -90)) # 正面 (-X)
+add_sun('SunRight', 2.6, (90, 0, 0))   # 右横 (+Y) -> サイドビューを明るく照らす！
+add_sun('SunLeft', 1.8, (90, 0, 180))  # 左横 (-Y)
+add_sun('SunTop', 2.0, (45, 0, -45))   # 上から
+
+# 7. 手（右手・左手）のスケール拡大（存在感アップ・後ろに振っても消えない！）
+r_hand = bpy.data.objects.get('右手')
+l_hand = bpy.data.objects.get('左手')
+if r_hand:
+    r_hand.scale = mathutils.Vector((0.20, 0.22, 0.20))
+if l_hand:
+    l_hand.scale = mathutils.Vector((0.20, 0.22, 0.20))
 
 # 7. カメラ注視点エンプティ
 target = bpy.data.objects.get("CamTarget")

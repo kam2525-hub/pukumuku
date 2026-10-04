@@ -112,4 +112,6 @@ InitTestScene*.unity*
 temp_*/
 test_cam_frames/
 test_*.png
+test_*.gif
+s05_*.png
 __pycache__/

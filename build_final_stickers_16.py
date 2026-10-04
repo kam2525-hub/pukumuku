@@ -22,9 +22,7 @@ font_sign = ImageFont.truetype(FONT_PATH, 11)
 
 def draw_pop_text(draw, text, cx, cy, font, fill_color, stroke_color="#FFFFFF", stroke_width=6):
     """極太白フチ＋ドロップシャドウで視認性100%保証のポップ文字"""
-    # 影
     draw.text((cx + 2, cy + 3), text, font=font, fill=(0, 0, 0, 75), stroke_width=stroke_width, stroke_fill=(0, 0, 0, 75), anchor="mm")
-    # 本体
     draw.text((cx, cy), text, font=font, fill=fill_color, stroke_width=stroke_width, stroke_fill=stroke_color, anchor="mm")
 
 def draw_croissant(draw, x, y, size=20):
@@ -103,8 +101,10 @@ for idx in range(STICKER_COUNT):
             break
         base_im = Image.open(f_path).convert("RGBA")
         
-        overlay = Image.new("RGBA", (320, 270), (0, 0, 0, 0))
-        draw = ImageDraw.Draw(overlay)
+        bg_overlay = Image.new("RGBA", (320, 270), (0, 0, 0, 0))
+        fg_overlay = Image.new("RGBA", (320, 270), (0, 0, 0, 0))
+        draw_bg = ImageDraw.Draw(bg_overlay)
+        draw_fg = ImageDraw.Draw(fg_overlay)
         t = frame_idx / TOTAL_FRAMES
 
         if idx == 0:
@@ -113,13 +113,13 @@ for idx in range(STICKER_COUNT):
             sun_ang = t * 2 * pi
             for i in range(8):
                 a = sun_ang + i * (pi / 4)
-                draw.line([(sun_cx + 10 * math.cos(a), sun_cy + 10 * math.sin(a)),
-                           (sun_cx + 18 * math.cos(a), sun_cy + 18 * math.sin(a))], fill="#FF9800", width=3)
-            draw.ellipse([sun_cx - 9, sun_cy - 9, sun_cx + 9, sun_cy + 9], fill="#FF5722", outline="#FFFFFF", width=2)
+                draw_fg.line([(sun_cx + 10 * math.cos(a), sun_cy + 10 * math.sin(a)),
+                              (sun_cx + 18 * math.cos(a), sun_cy + 18 * math.sin(a))], fill="#FF9800", width=3)
+            draw_fg.ellipse([sun_cx - 9, sun_cy - 9, sun_cx + 9, sun_cy + 9], fill="#FF5722", outline="#FFFFFF", width=2)
             cw_y = 65 + int(4 * math.sin(t * 4 * pi))
-            draw_croissant(draw, 45, cw_y, 16)
-            draw_sparkle(draw, 78, cw_y - 10, 9, "#FFD54F")
-            draw_pop_text(draw, "こんにちは！", 90, 22, font_title, "#FF6F00")
+            draw_croissant(draw_fg, 45, cw_y, 16)
+            draw_sparkle(draw_fg, 78, cw_y - 10, 9, "#FFD54F")
+            draw_pop_text(draw_fg, "こんにちは！", 90, 22, font_title, "#FF6F00")
 
         elif idx == 1:
             # 02. ありがとうございます (最上部文字、左上メロンパン、左右ハート)
@@ -127,130 +127,136 @@ for idx in range(STICKER_COUNT):
                 ht = (t + offset) % 1.0
                 hx = hx_base + math.sin(ht * 2 * pi) * 6
                 hy = 240 - ht * 170
-                draw_heart(draw, int(hx), int(hy), int(9 + 3 * math.sin(ht * pi)), (255, 64, 129, int(220 * (1 - ht * 0.7))))
-            draw_melonpan(draw, 42, 60 + int(3 * math.sin(t * 4 * pi)), 14)
-            draw_pop_text(draw, "ありがとうございます", 160, 20, font_mid, "#E91E63")
+                draw_fg.heart = draw_heart(draw_fg, int(hx), int(hy), int(9 + 3 * math.sin(ht * pi)), (255, 64, 129, int(220 * (1 - ht * 0.7))))
+            draw_melonpan(draw_fg, 42, 60 + int(3 * math.sin(t * 4 * pi)), 14)
+            draw_pop_text(draw_fg, "ありがとうございます", 160, 20, font_mid, "#E91E63")
 
         elif idx == 2:
             # 03. 了解です！ (左上文字、左中央バゲット、スパークル)
             bg_y = 110 + int(4 * math.sin(t * 4 * pi))
-            draw_baguette(draw, 50, bg_y, angle=-30, length=40)
+            draw_baguette(draw_fg, 50, bg_y, angle=-30, length=40)
             scale = 1.0 + 0.3 * math.sin(t * 4 * pi)
-            draw_sparkle(draw, 140, 28, int(13 * scale), "#FFD700")
-            draw_sparkle(draw, 25, 75, int(9 * scale), "#FFF176")
-            draw_pop_text(draw, "了解です！", 85, 24, font_title, "#2E7D32")
+            draw_sparkle(draw_fg, 140, 28, int(13 * scale), "#FFD700")
+            draw_sparkle(draw_fg, 25, 75, int(9 * scale), "#FFF176")
+            draw_pop_text(draw_fg, "了解です！", 85, 24, font_title, "#2E7D32")
 
         elif idx == 3:
             # 04. NO (左上NO、青ざめタテ線、冷や汗)
             for x_line in range(35, 95, 10):
-                draw.line([(x_line, 10), (x_line, 24)], fill="#0288D1", width=2)
+                draw_fg.line([(x_line, 10), (x_line, 24)], fill="#0288D1", width=2)
             drop_y = 80 + int(8 * math.sin(t * 4 * pi))
-            draw.ellipse([55, drop_y, 70, drop_y + 16], fill="#03A9F4", outline="#FFFFFF", width=2)
-            draw_pop_text(draw, "NO", 65, 34, font_huge, "#D32F2F")
+            draw_fg.ellipse([55, drop_y, 70, drop_y + 16], fill="#03A9F4", outline="#FFFFFF", width=2)
+            draw_pop_text(draw_fg, "NO", 65, 34, font_huge, "#D32F2F")
 
         elif idx == 4:
-            # 05. 急ぎます！ (左上文字、純くん背後(左側)に大土煙＆スピードライン！)
+            # 05. 急ぎます！
+            # 【重要】土煙とスピード線は bg_overlay（純くんの奥・背景）に描くため、
+            # 純くんの手が後ろに振られても、手は土煙の前面に表示され絶対に消えない！
+            # さらに土煙のY座標は足元（Y=240〜255）のみで、手（Y=150〜190）には触れない！
             for i, offset in enumerate([0, 0.33, 0.66]):
                 sm_p = (t * 2 + offset) % 1.0
-                sm_x = 120 - sm_p * 75 - i * 15
-                sm_y = 225 - int(math.sin(sm_p * pi) * 18)
-                sm_r = int(11 + sm_p * 16)
-                draw.ellipse([sm_x - sm_r, sm_y - sm_r, sm_x + sm_r, sm_y + sm_r], fill=(225, 205, 175, int(190 * (1 - sm_p))))
-            for sp_y in [155, 180, 205]:
+                sm_x = 110 - sm_p * 70 - i * 12
+                sm_y = 245 - int(math.sin(sm_p * pi) * 12)
+                sm_r = int(9 + sm_p * 14)
+                # 白飛びしない温かい土色（#D49B6A）
+                draw_bg.ellipse([sm_x - sm_r, sm_y - sm_r, sm_x + sm_r, sm_y + sm_r], fill=(212, 155, 106, int(180 * (1 - sm_p))))
+            for sp_y in [180, 205, 230]:
                 sp_offset = int((t * 250) % 50)
-                draw.line([(110 - sp_offset, sp_y), (65 - sp_offset, sp_y)], fill="#FFA726", width=3)
-            draw_pop_text(draw, "急ぎます！", 85, 24, font_title, "#E65100")
+                draw_bg.line([(100 - sp_offset, sp_y), (55 - sp_offset, sp_y)], fill="#FFA726", width=3)
+            # 文字は前面
+            draw_pop_text(draw_fg, "急ぎます！", 85, 24, font_title, "#E65100")
 
         elif idx == 5:
             # 06. お願いします (最上部文字、右上メロンパン、左右スパークル)
-            draw_melonpan(draw, 275, 55 + int(4 * math.sin(t * 4 * pi)), 14)
+            draw_melonpan(draw_fg, 275, 55 + int(4 * math.sin(t * 4 * pi)), 14)
             for nx, ny_base in [(35, 55), (280, 110)]:
-                draw_sparkle(draw, nx, ny_base + int(5 * math.sin(t * 4 * pi)), 10, "#FFD700")
-            draw_pop_text(draw, "お願いします", 160, 20, font_title, "#F57C00")
+                draw_sparkle(draw_fg, nx, ny_base + int(5 * math.sin(t * 4 * pi)), 10, "#FFD700")
+            draw_pop_text(draw_fg, "お願いします", 160, 20, font_title, "#F57C00")
 
         elif idx == 6:
             # 07. ひとやすみ (左上文字、左中央温かいマグカップ)
-            draw_mug(draw, 50, 110, steam_t=t)
-            draw_sparkle(draw, 85, 95, 9, "#FFA726")
-            draw_pop_text(draw, "ひとやすみ", 80, 22, font_title, "#6D4C41")
+            draw_mug(draw_fg, 50, 110, steam_t=t)
+            draw_sparkle(draw_fg, 85, 95, 9, "#FFA726")
+            draw_pop_text(draw_fg, "ひとやすみ", 80, 22, font_title, "#6D4C41")
 
         elif idx == 7:
             # 08. やったー！ (最上部文字、左右ポップスタースパークル)
             scale = 1.0 + 0.3 * math.sin(t * 4 * pi)
-            draw_sparkle(draw, 35, 50, int(14 * scale), "#FFD700")
-            draw_sparkle(draw, 285, 50, int(14 * scale), "#FFD700")
-            draw_sparkle(draw, 30, 140, int(11 * scale), "#FF9800")
-            draw_sparkle(draw, 290, 140, int(11 * scale), "#FF9800")
-            draw_pop_text(draw, "やったー！", 160, 20, font_huge, "#FF6F00")
+            draw_sparkle(draw_fg, 35, 50, int(14 * scale), "#FFD700")
+            draw_sparkle(draw_fg, 285, 50, int(14 * scale), "#FFD700")
+            draw_sparkle(draw_fg, 30, 140, int(11 * scale), "#FF9800")
+            draw_sparkle(draw_fg, 290, 140, int(11 * scale), "#FF9800")
+            draw_pop_text(draw_fg, "やったー！", 160, 20, font_huge, "#FF6F00")
 
         elif idx == 8:
             # 09. うーん… (右上文字、ぽわぽわ思考フキダシ)
             for i, (bx, by, r) in enumerate([(155, 125, 5), (180, 100, 8), (210, 75, 12)]):
                 bob = int(3 * math.sin(t * 4 * pi + i))
-                draw.ellipse([bx - r, by - r + bob, bx + r, by + r + bob], fill=(255, 255, 255, 220), outline="#BDBDBD", width=2)
-            draw.text((210, 75), "？", font=font_title, fill="#757575", anchor="mm")
-            draw_pop_text(draw, "うーん…", 235, 24, font_title, "#5C6BC0")
+                draw_fg.ellipse([bx - r, by - r + bob, bx + r, by + r + bob], fill=(255, 255, 255, 220), outline="#BDBDBD", width=2)
+            draw_fg.text((210, 75), "？", font=font_title, fill="#757575", anchor="mm")
+            draw_pop_text(draw_fg, "うーん…", 235, 24, font_title, "#5C6BC0")
 
         elif idx == 9:
             # 10. プンプン！ (最上部文字、両肩の上怒りマーク💢)
             for qx, qy in [(45, 60), (275, 60)]:
                 q_bob = int(3 * math.sin(t * 4 * pi))
-                draw.line([(qx - 9, qy - 9 + q_bob), (qx + 9, qy + 9 + q_bob)], fill="#D32F2F", width=4)
-                draw.line([(qx + 9, qy - 9 + q_bob), (qx - 9, qy + 9 + q_bob)], fill="#D32F2F", width=4)
-                draw.arc([qx - 11, qy - 11 + q_bob, qx + 11, qy + 11 + q_bob], 0, 360, fill="#D32F2F", width=3)
-            draw_pop_text(draw, "プンプン！", 160, 20, font_title, "#C62828")
+                draw_fg.line([(qx - 9, qy - 9 + q_bob), (qx + 9, qy + 9 + q_bob)], fill="#D32F2F", width=4)
+                draw_fg.line([(qx + 9, qy - 9 + q_bob), (qx - 9, qy + 9 + q_bob)], fill="#D32F2F", width=4)
+                draw_fg.arc([qx - 11, qy - 11 + q_bob, qx + 11, qy + 11 + q_bob], 0, 360, fill="#D32F2F", width=3)
+            draw_pop_text(draw_fg, "プンプン！", 160, 20, font_title, "#C62828")
 
         elif idx == 10:
             # 11. ごめんなさい… (最上部文字、頭上雨雲＆涙)
-            draw_pop_text(draw, "ごめんなさい…", 160, 18, font_mid, "#455A64")
-            draw_ellipse = draw.ellipse
-            draw_ellipse([215, 30, 245, 48], fill="#90A4AE")
-            draw_ellipse([230, 24, 260, 46], fill="#78909C")
-            draw_ellipse([250, 32, 275, 50], fill="#90A4AE")
+            draw_pop_text(draw_fg, "ごめんなさい…", 160, 18, font_mid, "#455A64")
+            draw_fg.ellipse([215, 30, 245, 48], fill="#90A4AE")
+            draw_fg.ellipse([230, 24, 260, 46], fill="#78909C")
+            draw_fg.ellipse([250, 32, 275, 50], fill="#90A4AE")
             for i, offset in enumerate([0, 0.5]):
                 rt = (t * 2 + offset) % 1.0
                 ry = 50 + int(rt * 35)
-                draw.line([(235 + i * 20, ry), (235 + i * 20, ry + 6)], fill="#0288D1", width=2)
+                draw_fg.line([(235 + i * 20, ry), (235 + i * 20, ry + 6)], fill="#0288D1", width=2)
 
         elif idx == 11:
             # 12. いいですね！ (最上部文字、左右音符＆ミラーボール)
             for i, (nx, ny_base, col) in enumerate([(35, 50, "#FF4081"), (285, 50, "#00E676"), (30, 120, "#FFD700"), (290, 120, "#00B0FF")]):
                 ny = ny_base + int(6 * math.sin(t * 4 * pi + i))
-                draw.ellipse([nx - 5, ny, nx + 5, ny + 8], fill=col)
-                draw.line([(nx + 5, ny + 4), (nx + 5, ny - 12)], fill=col, width=3)
-            draw_pop_text(draw, "いいですね！", 160, 20, font_title, "#E040FB")
+                draw_fg.ellipse([nx - 5, ny, nx + 5, ny + 8], fill=col)
+                draw_fg.line([(nx + 5, ny + 4), (nx + 5, ny - 12)], fill=col, width=3)
+            draw_pop_text(draw_fg, "いいですね！", 160, 20, font_title, "#E040FB")
 
         elif idx == 12:
             # 13. よろしくです (左上文字、左クロワッサン、手元スパークル)
-            draw_croissant(draw, 50, 90 + int(4 * math.sin(t * 4 * pi)), 17)
-            draw_sparkle(draw, 240, 52, 12, "#FFD700")
-            draw_pop_text(draw, "よろしくです", 85, 22, font_title, "#1976D2")
+            draw_croissant(draw_fg, 50, 90 + int(4 * math.sin(t * 4 * pi)), 17)
+            draw_sparkle(draw_fg, 240, 52, 12, "#FFD700")
+            draw_pop_text(draw_fg, "よろしくです", 85, 22, font_title, "#1976D2")
 
         elif idx == 13:
             # 14. いらっしゃいませ！ (最上部文字、左側独立食パン看板！)
-            draw_bread_sign(draw, 38, 160) # 左端に独立自立！腕と完全分離！
-            draw_sparkle(draw, 80, 140, 9, "#FFD700")
-            draw_pop_text(draw, "いらっしゃいませ！", 160, 18, font_mid, "#E65100")
+            draw_bread_sign(draw_fg, 38, 160)
+            draw_sparkle(draw_fg, 80, 140, 9, "#FFD700")
+            draw_pop_text(draw_fg, "いらっしゃいませ！", 160, 18, font_mid, "#E65100")
 
         elif idx == 14:
             # 15. おやすみなさい (左上文字、右上三日月＆Zzz...)
-            draw.ellipse([245, 30, 275, 60], fill="#FFD54F")
-            draw.ellipse([252, 26, 282, 56], fill=(0, 0, 0, 0))
-            draw.text((185, 38 - int(5 * math.sin(t * 2 * pi))), "Z", font=font_small, fill="#90CAF9")
-            draw.text((200, 30 - int(6 * math.sin(t * 2 * pi))), "z", font=font_small, fill="#90CAF9")
-            draw.text((212, 22 - int(7 * math.sin(t * 2 * pi))), "z", font=font_small, fill="#64B5F6")
-            draw_pop_text(draw, "おやすみなさい", 100, 22, font_title, "#3949AB")
+            draw_fg.ellipse([245, 30, 275, 60], fill="#FFD54F")
+            draw_fg.ellipse([252, 26, 282, 56], fill=(0, 0, 0, 0))
+            draw_fg.text((185, 38 - int(5 * math.sin(t * 2 * pi))), "Z", font=font_small, fill="#90CAF9")
+            draw_fg.text((200, 30 - int(6 * math.sin(t * 2 * pi))), "z", font=font_small, fill="#90CAF9")
+            draw_fg.text((212, 22 - int(7 * math.sin(t * 2 * pi))), "z", font=font_small, fill="#64B5F6")
+            draw_pop_text(draw_fg, "おやすみなさい", 100, 22, font_title, "#3949AB")
 
         elif idx == 15:
             # 16. がんばります！ (左上文字、右側〜背後メラメラ炎)
             for i, offset in enumerate([0, 0.33, 0.66]):
                 flame_p = (t * 2 + offset) % 1.0
                 fx = 240 + int(i * 22 + 7 * math.sin(t * 4 * pi))
-                draw.polygon([(fx, 150), (fx + 20, 230), (fx - 20, 230)], fill=(255, 87, 34, int(180 * (1 - flame_p * 0.4))))
-                draw.polygon([(fx, 170), (fx + 12, 230), (fx - 12, 230)], fill=(255, 235, 59, int(220 * (1 - flame_p * 0.3))))
-            draw_pop_text(draw, "がんばります！", 90, 22, font_title, "#D84315")
+                draw_bg.polygon([(fx, 150), (fx + 20, 230), (fx - 20, 230)], fill=(255, 87, 34, int(180 * (1 - flame_p * 0.4))))
+                draw_bg.polygon([(fx, 170), (fx + 12, 230), (fx - 12, 230)], fill=(255, 235, 59, int(220 * (1 - flame_p * 0.3))))
+            draw_pop_text(draw_fg, "がんばります！", 90, 22, font_title, "#D84315")
 
-        final_im = Image.alpha_composite(base_im, overlay)
+        # 3層合成: 背面エフェクト -> 純くん -> 前面文字＆エフェクト
+        mid_im = Image.alpha_composite(bg_overlay, base_im)
+        final_im = Image.alpha_composite(mid_im, fg_overlay)
         
         # 高速numpyポスタライズ（背景透過100%保護、チカチカ完全ゼロ、300KB以下厳格達成）
         arr = np.array(final_im)
@@ -276,19 +282,27 @@ for idx in range(STICKER_COUNT):
         loop=2
     )
     
-    # プレビュー用GIF (Web用常時ループ再生 loop=0)
+    # プレビュー用GIF (Web確認用: LINEトーク水色 #7AC0D6 に合成し、白飛び・同化を完全防止！)
     gif_path = os.path.join(OUT_DIR, f"{idx+1:02d}.gif")
     artifact_gif = os.path.join(ARTIFACT_DIR, f"{idx+1:02d}.gif")
-    frames[0].save(
+    
+    gif_frames = []
+    for f in frames:
+        # LINEトーク水色 (#7AC0D6 = 122, 192, 214) に合成し、白飛びゼロ・手が後ろに行っても100%クッキリ見える！
+        bg = Image.new('RGB', f.size, (122, 192, 214))
+        bg.paste(f, (0, 0), f)
+        p_frame = bg.quantize(colors=256, method=Image.Resampling.LANCZOS)
+        gif_frames.append(p_frame)
+
+    gif_frames[0].save(
         gif_path,
         save_all=True,
-        append_images=frames[1:],
+        append_images=gif_frames[1:],
         duration=100,
-        loop=0,
-        disposal=2
+        loop=0
     )
     try:
-        frames[0].save(artifact_gif, save_all=True, append_images=frames[1:], duration=100, loop=0, disposal=2)
+        gif_frames[0].save(artifact_gif, save_all=True, append_images=gif_frames[1:], duration=100, loop=0)
     except Exception:
         pass
 
