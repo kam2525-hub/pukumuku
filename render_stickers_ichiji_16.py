@@ -88,25 +88,34 @@ bpy.context.scene.render.film_transparent = True
 bpy.context.scene.render.image_settings.file_format = 'PNG'
 bpy.context.scene.render.image_settings.color_mode = 'RGBA'
 
-# ライティング
+# 6. ワールド環境光とマルチライティング（全アングル・真横でも影で真っ黒にならず超鮮明！）
+world = bpy.context.scene.world
+if not world:
+    world = bpy.data.worlds.new('World')
+    bpy.context.scene.world = world
+world.use_nodes = True
+bg = world.node_tree.nodes.get('Background')
+if bg:
+    bg.inputs['Color'].default_value = (0.92, 0.92, 0.96, 1.0)
+    bg.inputs['Strength'].default_value = 0.85
+
 for light in [o for o in bpy.data.objects if o.type == 'LIGHT']:
     bpy.data.objects.remove(light)
 
-sun_main = bpy.data.lights.new("SunMain", 'SUN')
-sun_main.energy = 4.2
-sun_main.use_shadow = False
-o_main = bpy.data.objects.new("SunMain", sun_main)
-o_main.rotation_euler = (math.radians(90), 0, math.radians(-90))
-bpy.context.collection.objects.link(o_main)
+def add_sun(name, energy, rot_deg):
+    sun = bpy.data.lights.new(name, 'SUN')
+    sun.energy = energy
+    sun.use_shadow = False
+    o = bpy.data.objects.new(name, sun)
+    o.rotation_euler = tuple(math.radians(a) for a in rot_deg)
+    bpy.context.collection.objects.link(o)
 
-sun_top = bpy.data.lights.new("SunTop", 'SUN')
-sun_top.energy = 2.0
-sun_top.use_shadow = False
-o_top = bpy.data.objects.new("SunTop", sun_top)
-o_top.rotation_euler = (math.radians(45), math.radians(20), math.radians(-65))
-bpy.context.collection.objects.link(o_top)
+add_sun('SunFront', 3.2, (90, 0, -90)) # 正面 (-X)
+add_sun('SunRight', 3.6, (90, 0, 0))   # 右横 (+Y) -> 05番のサイドビューを強力に明るく！
+add_sun('SunLeft', 2.4, (90, 0, 180))  # 左横 (-Y)
+add_sun('SunTop', 2.5, (45, 0, -45))   # 上から
 
-# カメラ注視点エンプティ
+# 7. カメラ注視点エンプティ
 target = bpy.data.objects.get("CamTarget")
 if not target:
     target = bpy.data.objects.new("CamTarget", None)
@@ -118,28 +127,28 @@ track.target = target
 track.track_axis = 'TRACK_NEGATIVE_Z'
 track.up_axis = 'UP_Y'
 
-# 全16種類の個別最適化カメラ構図
+# 全16種類の個別最適化カメラ構図（純くんを下半分／左右に配置し、上部・対角に広大な文字＆イラスト空間を確保！）
 CAM_SETUPS = [
-    { "cam_pos": (-6.8, 1.2, 2.9), "tgt_pos": (0.0, 0.0, 3.1), "lens": 40 },
-    { "cam_pos": (-6.8, 0.0, 4.8), "tgt_pos": (0.0, 0.0, 2.4), "lens": 40 },
-    { "cam_pos": (-6.0, -1.4, 2.6), "tgt_pos": (0.0, -0.3, 2.8), "lens": 36 },
-    { "cam_pos": (-6.6, 0.0, 3.4), "tgt_pos": (0.0, 0.0, 3.5), "lens": 40 },
-    { "cam_pos": (-3.2, 8.2, 1.6), "tgt_pos": (-0.2, 0.0, 1.5), "lens": 36 },
-    { "cam_pos": (-6.2, 0.0, 2.2), "tgt_pos": (0.0, 0.0, 3.0), "lens": 40 },
-    { "cam_pos": (-6.4, 0.0, 2.9), "tgt_pos": (0.0, 0.0, 3.0), "lens": 40 },
-    { "cam_pos": (-10.0, 0.0, 1.2), "tgt_pos": (0.0, 0.0, 2.4), "lens": 36 },
-    { "cam_pos": (-6.5, -1.2, 2.9), "tgt_pos": (0.0, 0.0, 3.0), "lens": 40 },
-    { "cam_pos": (-7.5, 0.0, 1.8), "tgt_pos": (0.0, 0.0, 1.9), "lens": 38 },
-    { "cam_pos": (-6.8, 0.0, 4.4), "tgt_pos": (0.0, 0.0, 2.4), "lens": 40 },
-    { "cam_pos": (-8.5, 0.0, 1.8), "tgt_pos": (0.0, 0.0, 1.8), "lens": 38 },
-    { "cam_pos": (-6.4, 0.0, 3.0), "tgt_pos": (0.0, 0.0, 3.0), "lens": 40 },
-    { "cam_pos": (-7.0, 0.0, 2.4), "tgt_pos": (0.0, 0.0, 2.4), "lens": 40 },
-    { "cam_pos": (-6.2, 0.0, 3.0), "tgt_pos": (0.0, 0.0, 3.0), "lens": 40 },
-    { "cam_pos": (-6.5, -1.0, 1.5), "tgt_pos": (0.0, 0.0, 2.4), "lens": 36 },
+    { "cam_pos": (-11.2, 0.9, 2.7),  "tgt_pos": (0.0, 0.3, 2.4), "lens": 38 },  # 01 こんにちは (右下立ち、左上文字・クロワッサン空き)
+    { "cam_pos": (-11.5, 0.0, 3.0),  "tgt_pos": (0.0, 0.0, 2.2), "lens": 38 },  # 02 ありがとう (下部中央お辞儀、上部文字・左右ハート空き)
+    { "cam_pos": (-10.8, -0.8, 2.6), "tgt_pos": (0.0, -0.3, 2.3), "lens": 38 }, # 03 了解 (右下親指、左側大文字・バゲット空き)
+    { "cam_pos": (-11.0, -0.8, 2.6), "tgt_pos": (0.0, -0.3, 2.3), "lens": 38 }, # 04 NO (右下「×」、左側NO・青ざめ空き)
+    { "cam_pos": (-0.8, 10.2, 1.6),  "tgt_pos": (0.0, 0.0, 1.4), "lens": 38 },  # 05 急ぎます (真横サイド疾走全身収容、左上文字、左下大土煙)
+    { "cam_pos": (-11.5, 0.0, 2.8),  "tgt_pos": (0.0, 0.0, 2.2), "lens": 38 },  # 06 お願い (下部合掌ピョンピョン、上部文字空き)
+    { "cam_pos": (-10.8, -0.8, 2.6), "tgt_pos": (0.0, -0.3, 2.3), "lens": 38 }, # 07 ひとやすみ (右下お茶、左側文字・大マグカップ空き)
+    { "cam_pos": (-12.5, 0.0, 2.6),  "tgt_pos": (0.0, 0.0, 1.8), "lens": 38 },  # 08 やったー (大ジャンプでも画面内すっぽり、最上部文字)
+    { "cam_pos": (-10.8, 0.8, 2.6),  "tgt_pos": (0.0, 0.3, 2.3), "lens": 38 },  # 09 うーん (左下考え中、右上文字・思考フキダシ空き)
+    { "cam_pos": (-11.5, 0.0, 2.8),  "tgt_pos": (0.0, 0.0, 2.2), "lens": 38 },  # 10 プンプン (下部仁王立ち、上部文字・両肩上怒りマーク)
+    { "cam_pos": (-11.0, -0.7, 2.7), "tgt_pos": (0.0, -0.2, 2.1), "lens": 38 }, # 11 ごめんなさい (右下うなだれ、左上文字・頭上雨雲空き)
+    { "cam_pos": (-11.5, 0.0, 2.6),  "tgt_pos": (0.0, 0.0, 2.0), "lens": 38 },  # 12 いいですね (中央ステップ、上部文字・左右音符空き)
+    { "cam_pos": (-10.8, -0.8, 2.6), "tgt_pos": (0.0, -0.3, 2.3), "lens": 38 }, # 13 よろしく (右下敬礼、左側文字・クロワッサン空き)
+    { "cam_pos": (-11.5, -0.9, 2.6), "tgt_pos": (0.0, -0.4, 2.0), "lens": 38 }, # 14 いらっしゃいませ (右下お辞儀、左側独立食パン看板空き！)
+    { "cam_pos": (-10.8, -0.6, 2.4), "tgt_pos": (0.0, -0.2, 2.0), "lens": 38 }, # 15 おやすみなさい (右下手枕、左上文字・上部三日月空き)
+    { "cam_pos": (-11.0, 0.8, 2.6),  "tgt_pos": (0.0, 0.3, 2.2), "lens": 38 },  # 16 がんばります (左下拳突き上げ、右上メラメラ炎空き)
 ]
 
 # 各パーツの初期Transform退避
-PARTS_NAMES = ['パン', '顔', '胴体', '右腕', '左腕', '右脚', '左脚', '右手', '左手']
+PARTS_NAMES = ['パン', '顔', '胴体', '右腕', '左腕', '右脚', '左脚']
 initial_transforms = {}
 parts = {}
 for name in PARTS_NAMES:
@@ -159,7 +168,7 @@ def reset_transforms():
             obj.location = init['loc'].copy()
             obj.rotation_euler = init['rot'].copy()
             obj.scale = init['scale'].copy()
-    # 腕のベースポーズ: Tポーズ(x=90/270)を脱却し、自然に体側に下ろした状態(x=0)を基準とする！
+    # 腕のベースポーズ: 自然に体側に下ろした状態(x=0)を基準とする
     r_arm = parts.get('右腕')
     l_arm = parts.get('左腕')
     if r_arm: r_arm.rotation_euler = mathutils.Euler((0, 0, 0), 'XYZ')
@@ -168,7 +177,6 @@ def reset_transforms():
 def apply_pose(s_idx, t):
     reset_transforms()
     pi = math.pi
-    bread = parts.get('パン')
     face = parts.get('顔')
     body = parts.get('胴体')
     r_arm = parts.get('右腕')
@@ -176,196 +184,216 @@ def apply_pose(s_idx, t):
     r_leg = parts.get('右脚')
     l_leg = parts.get('左脚')
 
+    # 【重要幾何学ルール】
+    # 正面は -X。
+    # 前傾・うなだれ・下向き頷き・前への腕脚振り = Y軸回転マイナス (負)！
+    # 後傾・仰け反り・胸を張る・後ろへの腕脚振り = Y軸回転プラス (正)！
+    # 腕の左右（冠状面）の開閉・手振り = X軸回転！
+
     if s_idx == 0:
-        # 01. こんにちは！ (右手を高く上げてバイバイ手振り、頭コテンコテン)
+        # 01. こんにちは！ (右手を斜め上に掲げ、X軸回転で画面左右に可愛くバイバイ！)
         wave = math.sin(t * 4 * pi)
         if r_arm:
-            r_arm.rotation_euler.x = math.radians(135)
-            r_arm.rotation_euler.y = math.radians(25) * wave
+            # X軸回転で左右に手振り
+            r_arm.rotation_euler.x = math.radians(130) + math.radians(22) * wave
+        if l_arm:
+            l_arm.rotation_euler.x = -math.radians(10)
         if face:
-            face.rotation_euler.x = math.radians(12) * math.sin(t * 2 * pi)
+            # 首コテン
+            face.rotation_euler.x = math.radians(14) * math.sin(t * 2 * pi)
         if body:
-            body.location.z += 0.08 * abs(wave)
+            body.location.z += 0.04 * abs(wave)
 
     elif s_idx == 1:
-        # 02. ありがとう！ (腰から深々とお辞儀し、パッと顔を上げて両手を開く)
+        # 02. ありがとうございます (前半: 前傾で深々とお辞儀ペコリ、後半: パッと顔を上げて両手を広げ感謝！)
         cycle = t
         if cycle < 0.5:
             bow = math.sin(cycle * 2 * pi)
-            if body: body.rotation_euler.y = math.radians(38) * bow
+            if body:
+                body.rotation_euler.y = -math.radians(35) * bow # 前傾お辞儀！
+            if face:
+                face.rotation_euler.y = -math.radians(15) * bow # 下を向く！
             if r_arm and l_arm:
-                r_arm.rotation_euler.y = math.radians(25) * bow
-                l_arm.rotation_euler.y = math.radians(25) * bow
+                r_arm.rotation_euler.y = -math.radians(20) * bow
+                l_arm.rotation_euler.y = -math.radians(20) * bow
         else:
             spread = math.sin((cycle - 0.5) * 2 * pi)
             if body:
-                body.rotation_euler.y = -math.radians(8) * spread
-                body.location.z += 0.06 * spread
+                body.rotation_euler.y = math.radians(6) * spread # 少し胸を張る
+                body.location.z += 0.05 * spread
             if r_arm and l_arm:
-                r_arm.rotation_euler.x = math.radians(45) * spread
-                r_arm.rotation_euler.y = math.radians(20) * spread
-                l_arm.rotation_euler.x = -math.radians(45) * spread
-                l_arm.rotation_euler.y = math.radians(20) * spread
+                r_arm.rotation_euler.x = math.radians(40) * spread
+                l_arm.rotation_euler.x = -math.radians(40) * spread
 
     elif s_idx == 2:
-        # 03. OK！ (前に身を乗り出して右腕突き出し親指グッ、力強く2回頷く)
+        # 03. 了解です！ (右腕突き出し親指グッ、力強く2回頷く！)
         nod = abs(math.sin(t * 4 * pi))
         if body:
-            body.rotation_euler.y = math.radians(12)
-            body.location.x += -0.15 * nod
+            body.rotation_euler.y = -math.radians(8) # わずかに前傾
         if r_arm:
-            r_arm.rotation_euler.y = math.radians(75)
+            r_arm.rotation_euler.y = -math.radians(75) # 前に突き出す！
             r_arm.rotation_euler.x = math.radians(15)
+        if l_arm:
+            l_arm.rotation_euler.x = -math.radians(30) # 腰付近
+            l_arm.rotation_euler.y = -math.radians(15)
         if face:
-            face.rotation_euler.y = math.radians(16) * nod
+            face.rotation_euler.y = -math.radians(18) * nod # 前＝下向き頷き！
 
     elif s_idx == 3:
-        # 04. NO (両腕を胸の前で交差して「×」、頭を激しくイヤイヤ振る)
+        # 04. NO (両腕を胸の前で「×」交差、首を激しくイヤイヤ振る！)
         shake = math.sin(t * 4 * pi)
         if face:
-            face.rotation_euler.z = math.radians(26) * shake
+            face.rotation_euler.z = math.radians(25) * shake # 左右イヤイヤ
         if r_arm and l_arm:
-            r_arm.rotation_euler.y = math.radians(45)
-            r_arm.rotation_euler.x = math.radians(35) + math.radians(8) * shake
-            l_arm.rotation_euler.y = math.radians(45)
-            l_arm.rotation_euler.x = -math.radians(35) - math.radians(8) * shake
+            r_arm.rotation_euler.x = math.radians(35)
+            r_arm.rotation_euler.y = -math.radians(45) # 前で交差
+            l_arm.rotation_euler.x = -math.radians(35)
+            l_arm.rotation_euler.y = -math.radians(45)
 
     elif s_idx == 4:
-        # 05. 急ぎます！ (前傾猛ダッシュ！結合メッシュにより靴の分離ゼロ！)
+        # 05. 急ぎます！ (サイドビュー前傾猛ダッシュ！靴の分離ゼロ＆超明るい！)
         run = math.sin(t * 4 * pi)
         if body:
-            body.rotation_euler.y = math.radians(18)
-            body.location.z += 0.14 * abs(run)
+            body.rotation_euler.y = -math.radians(20) # 前傾姿勢！
+            body.location.z += 0.12 * abs(run)
         if r_leg:
-            r_leg.rotation_euler.y = math.radians(50) * run
+            r_leg.rotation_euler.y = -math.radians(50) * run
         if l_leg:
-            l_leg.rotation_euler.y = -math.radians(50) * run
+            l_leg.rotation_euler.y = math.radians(50) * run
         if r_arm:
-            r_arm.rotation_euler.y = math.radians(55) * run
+            r_arm.rotation_euler.y = -math.radians(55) * run
         if l_arm:
-            l_arm.rotation_euler.y = -math.radians(55) * run
+            l_arm.rotation_euler.y = math.radians(55) * run
 
     elif s_idx == 5:
-        # 06. いただきます♪ (胸の前で合掌、ピョンピョン跳ねる)
+        # 06. お願いします (胸の前で両手合掌、ピョンピョン跳ねる！)
         jump = abs(math.sin(t * 4 * pi))
-        if body: body.location.z += 0.16 * jump
+        if body:
+            body.location.z += 0.15 * jump
+            body.rotation_euler.y = -math.radians(4) * jump
         if r_arm and l_arm:
-            r_arm.rotation_euler.y = math.radians(65)
             r_arm.rotation_euler.x = math.radians(25)
-            l_arm.rotation_euler.y = math.radians(65)
+            r_arm.rotation_euler.y = -math.radians(65)
             l_arm.rotation_euler.x = -math.radians(25)
+            l_arm.rotation_euler.y = -math.radians(65)
         if face:
-            face.rotation_euler.y = -math.radians(12) * jump
+            face.rotation_euler.y = -math.radians(8) * jump
 
     elif s_idx == 6:
-        # 07. お疲れさまです (お茶を差し出すように優しく両手を前に差し出す)
+        # 07. ひとやすみ (お茶を差し出すように優しく両手を差し出し、ほっこり揺れ)
         breathe = math.sin(t * 2 * pi)
         if body:
-            body.rotation_euler.y = math.radians(6) * breathe
+            body.rotation_euler.y = -math.radians(8) * breathe # 優しい会釈！
         if r_arm and l_arm:
-            r_arm.rotation_euler.y = math.radians(45) + math.radians(6) * breathe
+            r_arm.rotation_euler.y = -math.radians(45) - math.radians(6) * breathe
             r_arm.rotation_euler.x = math.radians(15)
-            l_arm.rotation_euler.y = math.radians(45) + math.radians(6) * breathe
+            l_arm.rotation_euler.y = -math.radians(45) - math.radians(6) * breathe
             l_arm.rotation_euler.x = -math.radians(15)
         if face:
-            face.rotation_euler.x = math.radians(14) * breathe
+            face.rotation_euler.x = math.radians(12) * breathe
 
     elif s_idx == 7:
         # 08. やったー！ (しゃがんでから大ジャンプ！両手両足を大の字！)
         jump_phase = t
         if jump_phase < 0.25:
             squat = math.sin(jump_phase * 4 * pi)
-            if body: body.location.z += -0.15 * squat
+            if body:
+                body.location.z += -0.12 * squat
             if r_leg and l_leg:
-                r_leg.rotation_euler.y = -math.radians(20) * squat
-                l_leg.rotation_euler.y = -math.radians(20) * squat
+                r_leg.rotation_euler.y = math.radians(20) * squat
+                l_leg.rotation_euler.y = math.radians(20) * squat
         else:
             jp = math.sin((jump_phase - 0.25) / 0.75 * pi)
-            if body: body.location.z += 0.65 * jp
+            if body:
+                body.location.z += 0.55 * jp
             if r_arm and l_arm:
                 r_arm.rotation_euler.x = math.radians(145) * jp
                 l_arm.rotation_euler.x = -math.radians(145) * jp
             if r_leg and l_leg:
-                r_leg.rotation_euler.x = math.radians(22) * jp
-                l_leg.rotation_euler.x = -math.radians(22) * jp
+                r_leg.rotation_euler.x = math.radians(20) * jp
+                l_leg.rotation_euler.x = -math.radians(20) * jp
 
     elif s_idx == 8:
-        # 09. 考え中... (右手をあごに当て、左手肘支え、うーんと首を回す)
+        # 09. うーん… (右手をあごに当て、首を左右に傾げて考え込む)
         think = math.sin(t * 2 * pi)
         if r_arm:
-            r_arm.rotation_euler.y = math.radians(80)
-            r_arm.rotation_euler.x = math.radians(25)
+            r_arm.rotation_euler.y = -math.radians(80) # あごへ
+            r_arm.rotation_euler.x = math.radians(20)
         if l_arm:
-            l_arm.rotation_euler.y = math.radians(45)
-            l_arm.rotation_euler.x = -math.radians(30)
+            l_arm.rotation_euler.y = -math.radians(40) # 肘支え
+            l_arm.rotation_euler.x = -math.radians(25)
         if face:
-            face.rotation_euler.x = math.radians(16) * think
-            face.rotation_euler.y = math.radians(8) * math.cos(t * 2 * pi)
+            face.rotation_euler.x = math.radians(16) * think # 首傾げ
+            face.rotation_euler.y = -math.radians(8) * math.cos(t * 2 * pi)
 
     elif s_idx == 9:
         # 10. プンプン！ (両手腰で仁王立ち、左右の足を交互に足踏みドンドン！)
         stomp = math.sin(t * 4 * pi)
         if r_arm and l_arm:
-            r_arm.rotation_euler.x = math.radians(45)
-            r_arm.rotation_euler.y = math.radians(15)
-            l_arm.rotation_euler.x = -math.radians(45)
-            l_arm.rotation_euler.y = math.radians(15)
+            r_arm.rotation_euler.x = math.radians(40)
+            r_arm.rotation_euler.y = -math.radians(15)
+            l_arm.rotation_euler.x = -math.radians(40)
+            l_arm.rotation_euler.y = -math.radians(15)
         lift_r = max(0, stomp)
         lift_l = max(0, -stomp)
-        if r_leg: r_leg.rotation_euler.y = math.radians(35) * lift_r
-        if l_leg: l_leg.rotation_euler.y = math.radians(35) * lift_l
+        if r_leg: r_leg.rotation_euler.y = -math.radians(35) * lift_r
+        if l_leg: l_leg.rotation_euler.y = -math.radians(35) * lift_l
         if body:
-            body.location.z += 0.06 * abs(stomp)
-            body.rotation_euler.y = math.radians(4) * stomp
+            body.location.z += 0.05 * abs(stomp)
+            body.rotation_euler.y = -math.radians(6) # 少し前傾
 
     elif s_idx == 10:
-        # 11. ごめんなさい... (ガックリうなだれて小さく震える)
-        shiver = math.sin(t * 12 * pi)
+        # 11. ごめんなさい… (ガックリうなだれて小さくプルプル震える)
+        shiver = math.sin(t * 16 * pi)
         slump = abs(math.sin(t * 2 * pi))
         if body:
-            body.rotation_euler.y = math.radians(28) + math.radians(4) * slump
+            body.rotation_euler.y = -math.radians(30) - math.radians(4) * slump # 前傾！
             body.location.z += -0.10
             body.location.x += 0.01 * shiver
         if face:
-            face.rotation_euler.y = math.radians(22)
+            face.rotation_euler.y = -math.radians(25) # ガックリ下を向く！
         if r_arm and l_arm:
-            r_arm.rotation_euler.y = math.radians(15)
-            l_arm.rotation_euler.y = math.radians(15)
+            r_arm.rotation_euler.y = -math.radians(15)
+            l_arm.rotation_euler.y = -math.radians(15)
 
     elif s_idx == 11:
-        # 12. イエーイ！ (左右にステップを踏みながら両手ウェーブダンス)
+        # 12. いいですね！ (左右にステップを踏みながら両手ウェーブダンス)
         step = math.sin(t * 4 * pi)
         if body:
-            body.location.y += 0.20 * step
-            body.rotation_euler.x = math.radians(15) * step
-            body.location.z += 0.08 * abs(step)
-        if r_leg: r_leg.rotation_euler.x = math.radians(18) * step
-        if l_leg: l_leg.rotation_euler.x = -math.radians(18) * step
+            body.location.y += 0.16 * step
+            body.rotation_euler.x = math.radians(12) * step
+            body.location.z += 0.06 * abs(step)
+        if r_leg: r_leg.rotation_euler.x = math.radians(15) * step
+        if l_leg: l_leg.rotation_euler.x = -math.radians(15) * step
         if r_arm and l_arm:
-            r_arm.rotation_euler.x = math.radians(110) + math.radians(30) * step
-            l_arm.rotation_euler.x = -math.radians(110) - math.radians(30) * step
+            r_arm.rotation_euler.x = math.radians(105) + math.radians(25) * step
+            l_arm.rotation_euler.x = -math.radians(105) - math.radians(25) * step
 
     elif s_idx == 12:
-        # 13. よろしく！ (右手を額にピッとおいてキリッと敬礼ポーズ)
+        # 13. よろしくです (右手を額にピッとおいてキリッと敬礼ポーズ)
         salute = math.sin(t * 2 * pi)
         if body:
             body.rotation_euler.y = -math.radians(6)
         if r_arm:
             r_arm.rotation_euler.x = math.radians(65)
-            r_arm.rotation_euler.y = math.radians(60)
+            r_arm.rotation_euler.y = -math.radians(60) # 額へ敬礼！
+        if l_arm:
+            l_arm.rotation_euler.x = -math.radians(20)
         if face:
-            face.rotation_euler.y = -math.radians(8) + math.radians(4) * salute
+            face.rotation_euler.x = math.radians(6) * salute
 
     elif s_idx == 13:
         # 14. いらっしゃいませ！ (両手を広げてお店の前でお出迎えお辞儀)
-        bow = math.sin(t * 2 * pi)
-        if bow < 0: bow = 0
-        if body: body.rotation_euler.y = math.radians(30) * bow
+        bow = max(0, math.sin(t * 2 * pi))
+        if body:
+            body.rotation_euler.y = -math.radians(32) * bow # 前傾お辞儀！
+        if face:
+            face.rotation_euler.y = -math.radians(15) * bow # 下向き
         if r_arm and l_arm:
             r_arm.rotation_euler.x = math.radians(45)
-            r_arm.rotation_euler.y = math.radians(35) * bow
+            r_arm.rotation_euler.y = -math.radians(35) * bow
             l_arm.rotation_euler.x = -math.radians(45)
-            l_arm.rotation_euler.y = math.radians(35) * bow
+            l_arm.rotation_euler.y = -math.radians(35) * bow
 
     elif s_idx == 14:
         # 15. おやすみなさい (手枕ポーズ、首コテンですやすや眠る)
@@ -374,30 +402,30 @@ def apply_pose(s_idx, t):
             body.location.z += 0.04 * sleep
         if r_arm:
             r_arm.rotation_euler.x = math.radians(35)
-            r_arm.rotation_euler.y = math.radians(60)
+            r_arm.rotation_euler.y = -math.radians(60) # 手枕
         if l_arm:
-            r_arm.rotation_euler.x = -math.radians(15)
-            l_arm.rotation_euler.y = math.radians(45)
+            l_arm.rotation_euler.x = -math.radians(15)
+            l_arm.rotation_euler.y = -math.radians(45)
         if face:
-            face.rotation_euler.x = math.radians(24)
+            face.rotation_euler.x = math.radians(22) # 首コテン
 
     elif s_idx == 15:
-        # 16. 一発逆転！ (右拳を天高く突き上げる熱血ガッツポーズ！)
+        # 16. がんばります！ (右拳を力強く天高く突き上げる熱血ガッツポーズ！)
         punch = math.sin(t * 4 * pi)
         if r_arm:
-            r_arm.rotation_euler.x = math.radians(160) + math.radians(15) * punch
+            r_arm.rotation_euler.x = math.radians(160) + math.radians(15) * punch # 天高く拳！
         if l_arm:
-            l_arm.rotation_euler.x = -math.radians(30)
-            l_arm.rotation_euler.y = math.radians(35)
+            l_arm.rotation_euler.x = -math.radians(25)
+            l_arm.rotation_euler.y = -math.radians(30)
         if body:
-            body.location.z += 0.12 * abs(punch)
-            body.rotation_euler.y = -math.radians(10)
+            body.location.z += 0.08 * abs(punch)
+            body.rotation_euler.y = -math.radians(8) # 前傾気合
         if r_leg and l_leg:
             r_leg.rotation_euler.x = math.radians(15)
             l_leg.rotation_euler.x = -math.radians(15)
 
 # レンダリング実行
-print("=== STARTING FULL 16-STICKER RENDERING ON 純くん一時保存.blend ===")
+print("=== STARTING COMPLETE RE-RENDERING OF 16 STICKERS ===")
 TOTAL_FRAMES = 20
 
 for s_idx in range(16):
@@ -421,4 +449,5 @@ for s_idx in range(16):
         bpy.ops.render.render(write_still=True)
 
 reset_transforms()
-print("✓ All 320 frames for 16 stickers rendered successfully from 純くん一時保存.blend!")
+print("✓ All 320 frames for 16 stickers rendered successfully with corrected rotation axes and lighting!")
+
