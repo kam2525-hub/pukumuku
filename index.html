@@ -4,8 +4,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>純くんの焼きたてパンキャッチ！ - パン工房プクムク</title>
-  <link rel="stylesheet" href="style.css?v=preview20261103e">
+  <link rel="stylesheet" href="style.css?v=20261103_v2">
   <!-- Google Fonts: かわいい丸ゴシック -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -62,8 +65,23 @@
         </div>
         <div class="start-btn-group">
           <button id="start-btn" class="main-btn">ゲームスタート！</button>
-          <button id="open-ranking-btn" class="sub-btn">🏆 全国のランキングを見る</button>
+          <div class="sub-btn-row">
+            <button id="open-ranking-btn" class="sub-btn">🏆 ランキング</button>
+            <button id="open-catalog-btn" class="sub-btn">📖 パン図鑑</button>
+          </div>
         </div>
+      </div>
+    </div>
+
+    <!-- パン図鑑モーダル -->
+    <div id="catalog-modal" class="overlay">
+      <div class="modal-card catalog-card">
+        <div class="result-header">📖 プクムク焼きたてパン図鑑</div>
+        <div class="catalog-scroll-area">
+          <img src="bread_catalog.png?v=20261103_v2" class="catalog-img" alt="パン図鑑カタログ">
+        </div>
+        <div class="catalog-disclaimer">※ゲーム内の価格・見た目はイメージであり、実店舗の実際の商品・価格とは異なります。</div>
+        <button id="close-catalog-btn" class="main-btn">閉じる</button>
       </div>
     </div>
 
@@ -114,12 +132,15 @@
         </div>
 
         <p class="greeting-text">「ご来店ありがとうございました！」</p>
-        <button id="restart-btn" class="main-btn">もう一回あそぶ！</button>
+        <div class="result-btn-group">
+          <button id="restart-btn" class="main-btn">もう一回あそぶ！</button>
+          <button id="result-catalog-btn" class="sub-btn">📖 パン図鑑を見る</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <script src="game.js?v=preview20261103j"></script>
+  <script src="game.js?v=20261103_v2"></script>
 </body>
 
 </html>

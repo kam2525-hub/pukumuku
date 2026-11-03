@@ -1918,6 +1918,18 @@ bindButtonAction('close-ranking-btn', () => {
   }
 });
 
+// パン図鑑モーダル開閉
+const catalogModal = document.getElementById('catalog-modal');
+bindButtonAction('open-catalog-btn', () => {
+  if (catalogModal) catalogModal.classList.add('active');
+});
+bindButtonAction('result-catalog-btn', () => {
+  if (catalogModal) catalogModal.classList.add('active');
+});
+bindButtonAction('close-catalog-btn', () => {
+  if (catalogModal) catalogModal.classList.remove('active');
+});
+
 // サウンド切替ボタン
 const soundBtn = document.getElementById('sound-btn');
 if (soundBtn) {
