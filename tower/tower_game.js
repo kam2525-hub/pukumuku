@@ -111,35 +111,35 @@ const INGREDIENTS = [
     id: 'patty',
     name: '肉厚パティ',
     type: 'cylinder',
-    radius: 0.52,
+    radius: 0.54,
     height: 0.18,
     color: 0x4A2E18,
     mass: 2.2,
-    friction: 0.8,
-    restitution: 0.05
+    friction: 0.95,
+    restitution: 0.0
   },
   {
     id: 'tomato',
     name: 'スライストマト',
     type: 'cylinder',
-    radius: 0.50,
+    radius: 0.52,
     height: 0.12,
     color: 0xE53935,
-    mass: 1.2,
-    friction: 0.35, // すべりやすい
-    restitution: 0.15
+    mass: 1.4,
+    friction: 0.85,
+    restitution: 0.0
   },
   {
     id: 'cheese',
     name: 'とろけるチーズ',
     type: 'box',
-    width: 0.95,
-    height: 0.04,
-    depth: 0.95,
+    width: 0.98,
+    height: 0.05,
+    depth: 0.98,
     color: 0xFFC107,
-    mass: 0.8,
-    friction: 0.9, // 密着しやすい
-    restitution: 0.02
+    mass: 1.0,
+    friction: 0.98, // 密着して滑り止めになる
+    restitution: 0.0
   },
   {
     id: 'lettuce',
@@ -149,32 +149,32 @@ const INGREDIENTS = [
     height: 0.06,
     depth: 1.05,
     color: 0x43A047,
-    mass: 0.6,
-    friction: 0.6,
-    restitution: 0.05
+    mass: 0.8,
+    friction: 0.9,
+    restitution: 0.0
   },
   {
     id: 'egg',
     name: 'ぷるぷるたまご',
     type: 'cylinder',
-    radius: 0.48,
+    radius: 0.50,
     height: 0.14,
     color: 0xFFF9C4,
-    mass: 1.1,
-    friction: 0.4,
-    restitution: 0.12
+    mass: 1.2,
+    friction: 0.85,
+    restitution: 0.0
   },
   {
     id: 'croissant_bonus',
     name: '名物クロワッサン',
     type: 'box',
-    width: 0.8,
+    width: 0.82,
     height: 0.22,
-    depth: 0.55,
+    depth: 0.58,
     color: 0xD87D2B,
-    mass: 1.0,
-    friction: 0.7,
-    restitution: 0.1
+    mass: 1.1,
+    friction: 0.9,
+    restitution: 0.0
   }
 ];
 
@@ -197,7 +197,7 @@ let tongTime = 0;
 let basePlateY = 0.4;
 let targetCameraY = 1.6;
 let currentCameraY = 1.6;
-const TONG_HEIGHT_OFFSET = 1.65;
+const TONG_HEIGHT_OFFSET = 1.35; // トングの高さを適度に近づけて優しくポトッと落とす
 let tongMeshGroup = null;
 
 // --- 4. 初期化 ---
@@ -245,7 +245,13 @@ function initGame() {
   world = new CANNON.World();
   world.gravity.set(0, -9.82, 0);
   world.broadphase = new CANNON.NaiveBroadphase();
-  world.solver.iterations = 12;
+  world.solver.iterations = 14;
+
+  // ★反発ゼロ＆高摩擦設定（具材が弾かれず、しっとりピタッと重なる！）
+  world.defaultContactMaterial.friction = 0.85;
+  world.defaultContactMaterial.restitution = 0.0;
+  world.defaultContactMaterial.contactEquationStiffness = 1e7;
+  world.defaultContactMaterial.contactEquationRelaxation = 3;
 
   // 6. テーブルとお皿の作成
   createTableAndPlate();
@@ -279,19 +285,19 @@ function createTableAndPlate() {
   scene.add(tableMesh);
 
   // お皿（Three.js）
-  const plateGeo = new THREE.CylinderGeometry(1.2, 0.95, 0.12, 32);
+  const plateGeo = new THREE.CylinderGeometry(1.35, 1.1, 0.14, 32);
   const plateMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.2, metalness: 0.1 });
   const plateMesh = new THREE.Mesh(plateGeo, plateMat);
-  plateMesh.position.set(0, basePlateY - 0.06, 0);
+  plateMesh.position.set(0, basePlateY - 0.07, 0);
   plateMesh.receiveShadow = true;
   scene.add(plateMesh);
 
   // お皿の物理ボディ (Static)
-  const plateShape = new CANNON.Cylinder(1.2, 0.95, 0.12, 24);
+  const plateShape = new CANNON.Cylinder(1.35, 1.1, 0.14, 24);
   plateBody = new CANNON.Body({ mass: 0 }); // 静的剛体
   plateBody.addShape(plateShape);
-  plateBody.position.set(0, basePlateY - 0.06, 0);
-  plateBody.material = new CANNON.Material({ friction: 0.8, restitution: 0.05 });
+  plateBody.position.set(0, basePlateY - 0.07, 0);
+  plateBody.material = new CANNON.Material({ friction: 0.95, restitution: 0.0 });
   world.addBody(plateBody);
 
   // お皿の上の「土台バンズ（底のパン）」
@@ -344,8 +350,8 @@ function createTongModel() {
 
 // 土台バンズ
 function createBaseBun() {
-  const radius = 0.55;
-  const height = 0.22;
+  const radius = 0.68;
+  const height = 0.24;
   const bunGeo = new THREE.CylinderGeometry(radius, radius * 0.95, height, 28);
   const bunMat = new THREE.MeshStandardMaterial({ color: 0xDDA15E, roughness: 0.5 });
   const bunMesh = new THREE.Mesh(bunGeo, bunMat);
@@ -359,7 +365,7 @@ function createBaseBun() {
   baseBunBody = new CANNON.Body({ mass: 0 });
   baseBunBody.addShape(bunShape);
   baseBunBody.position.set(0, basePlateY + height / 2, 0);
-  baseBunBody.material = new CANNON.Material({ friction: 0.9, restitution: 0.02 });
+  baseBunBody.material = new CANNON.Material({ friction: 0.95, restitution: 0.0 });
   world.addBody(baseBunBody);
 
   highestY = basePlateY + height;
@@ -436,21 +442,21 @@ function dropCurrentItem() {
     shape = new CANNON.Box(new CANNON.Vec3(def.width / 2, def.height / 2, def.depth / 2));
   }
 
-  const mat = new CANNON.Material({ friction: def.friction, restitution: def.restitution });
+  const mat = new CANNON.Material({ friction: def.friction, restitution: 0.0 });
   const body = new CANNON.Body({
     mass: def.mass,
     shape: shape,
     material: mat,
     position: new CANNON.Vec3(spawnX, spawnY, 0),
-    linearDamping: 0.3,
-    angularDamping: 0.35
+    linearDamping: 0.45,
+    angularDamping: 0.65
   });
 
-  // わずかにランダムな回転力を与えて自然なグラつきを演出
+  // 初速は水平に安定して落とす（激しい回転による弾きを防止）
   body.angularVelocity.set(
-    (Math.random() - 0.5) * 0.4,
-    (Math.random() - 0.5) * 0.8,
-    (Math.random() - 0.5) * 0.4
+    (Math.random() - 0.5) * 0.08,
+    (Math.random() - 0.5) * 0.1,
+    (Math.random() - 0.5) * 0.08
   );
 
   world.addBody(body);
