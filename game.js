@@ -362,14 +362,16 @@ const GAME_CONFIG = {
 };
 
 const BREAD_TYPES = {
-  bread_loaf: { name: "山型食パン", score: 100, scale: 0.28, speed: 3.5, prob: 0.18 },
-  bread_croissant: { name: "クロワッサン", score: 200, scale: 0.28, speed: 4.0, prob: 0.16 },
-  bread_melon: { name: "メロンパン", score: 300, scale: 0.28, speed: 3.8, prob: 0.15 },
-  bread_cornet: { name: "チョココロネ", score: 250, scale: 0.28, speed: 3.9, prob: 0.14 },
-  bread_baguette: { name: "フランスパン", score: 150, scale: 0.28, speed: 4.2, prob: 0.14 },
-  bread_anpan: { name: "桜あんぱん", score: 180, scale: 0.28, speed: 3.7, prob: 0.11 },
-  bread_gold: { name: "金のプクムクパン", score: 1000, scale: 0.28, speed: 4.8, prob: 0.04 },
-  bread_burnt: { name: "コゲパン", score: -100, scale: 0.28, speed: 4.4, prob: 0.08 }
+  bread_croissant: { name: "クロワッサン", score: 200, scale: 0.22, towerScale: 0.15, speed: 4.0, prob: 0.13 },
+  bread_melon: { name: "メロンパン", score: 300, scale: 0.26, towerScale: 0.16, speed: 3.8, prob: 0.13 },
+  bread_cream: { name: "クリームパン", score: 250, scale: 0.26, towerScale: 0.16, speed: 3.7, prob: 0.12 },
+  bread_burger: { name: "チーズバーガー", score: 350, scale: 0.26, towerScale: 0.15, speed: 3.9, prob: 0.11 },
+  bread_egg: { name: "たまごパン", score: 280, scale: 0.26, towerScale: 0.16, speed: 3.8, prob: 0.11, power: "fever" },
+  bread_mushroom: { name: "きのこパン", score: 260, scale: 0.26, towerScale: 0.16, speed: 3.7, prob: 0.10, power: "mega_box" },
+  bread_negi: { name: "ねぎパン", score: 240, scale: 0.26, towerScale: 0.16, speed: 3.9, prob: 0.10, power: "speed_up" },
+  bread_cocoa: { name: "ココアパン", score: 270, scale: 0.26, towerScale: 0.16, speed: 3.6, prob: 0.09 },
+  bread_gold: { name: "金のプクムクパン", score: 1000, scale: 0.38, towerScale: 0.24, speed: 4.8, prob: 0.04 },
+  bread_burnt: { name: "コゲパン", score: -100, scale: 0.28, towerScale: 0.18, speed: 4.3, prob: 0.07, power: "burnt" }
 };
 
 let gameState = {
@@ -379,16 +381,9 @@ let gameState = {
   combo: 0,
   isFever: false,
   feverTimer: 0,
-  breadCount: {
-    bread_loaf: 0,
-    bread_croissant: 0,
-    bread_melon: 0,
-    bread_cornet: 0,
-    bread_baguette: 0,
-    bread_anpan: 0,
-    bread_gold: 0,
-    bread_burnt: 0
-  },
+  megaBoxTimer: 0,
+  speedTimer: 0,
+  breadCount: Object.fromEntries(Object.keys(BREAD_TYPES).map(key => [key, 0])),
   playerX: 0,
   targetX: 0,
   towerBreads: []
@@ -486,7 +481,7 @@ loadingManager.onLoad = () => {
   isAssetsLoaded = true;
   if (startBtn) {
     startBtn.classList.remove('loading');
-    startBtn.innerText = 'パンを焼く！（スタート）';
+    startBtn.innerText = 'ゲームスタート！';
   }
   resizeRenderer();
 };
@@ -499,7 +494,7 @@ let junKun = null;
 let mixer = null;
 let animations = {};
 let currentAction = null;
-const CACHE_BUST = 'v=20260925_3';
+const CACHE_BUST = 'v=preview20261103g';
 
 const breadTemplates = {};
 const activeBreads = [];
@@ -851,62 +846,19 @@ const moonTex = createMoonTexture();
 const cloudTex = createCloudTexture();
 
 // 店舗モデルの読み込み＆全パーツへの美しいテクスチャ適用！
-loader.load(`models/pukumuku_shop.glb?${CACHE_BUST}`, (gltf) => {
+loader.load(`models/pukumuku_blender_shop.glb?${CACHE_BUST}`, (gltf) => {
   const shop = gltf.scene;
-  shop.position.set(0, 0, -1.8);
-  shop.scale.set(0.75, 0.75, 0.75);
+  shop.position.set(0, -0.16, -3.8);
+  shop.scale.set(0.62, 0.62, 0.62);
   shop.rotation.set(0, 0, 0);
 
   shop.traverse((child) => {
     if (child.isMesh) {
       child.receiveShadow = true;
-      const n = child.name;
-
-      if (n.includes('Wall') || n.includes('Shop_Wall')) {
-        child.material = new THREE.MeshStandardMaterial({
-          map: shopWallTex,
-          roughness: 0.65
-        });
-      } else if (n.includes('AwningText') || n.includes('Awning') || n.includes('plt')) {
-        child.material = new THREE.MeshStandardMaterial({
-          map: signTex,
-          roughness: 0.35
-        });
-      } else if (n.includes('ShowcaseFrame') || n.includes('DoorFrame') || n.includes('Shelf')) {
-        child.material = new THREE.MeshStandardMaterial({
-          map: woodTex,
-          roughness: 0.5
-        });
-      } else if (n.includes('SunFace')) {
-        child.material = new THREE.MeshStandardMaterial({
-          map: sunFaceTex,
-          roughness: 0.3
-        });
-      } else if (n.includes('Moon')) {
-        child.material = new THREE.MeshStandardMaterial({
-          map: moonTex,
-          roughness: 0.3
-        });
-      } else if (n.includes('Cloud')) {
-        child.material = new THREE.MeshStandardMaterial({
-          map: cloudTex,
-          roughness: 0.3
-        });
-      } else if (n.includes('Bread')) {
-        child.material = new THREE.MeshStandardMaterial({
-          color: 0xD37318,
-          roughness: 0.4
-        });
-      } else if (n.includes('SunFlame')) {
-        child.material = new THREE.MeshStandardMaterial({
-          color: 0xE74C3C,
-          roughness: 0.4
-        });
-      }
     }
   });
   scene.add(shop);
-});
+}, undefined, (err) => console.error('工房モデルの読み込みに失敗しました:', err));
 
 // 純くんの木箱メッシュ参照と、地面に置く木箱
 let junBreadBox = null;
@@ -981,31 +933,44 @@ loader.load(`models/jun_kun_carry_box.glb?${CACHE_BUST}`, (gltf) => {
   }
 }, undefined, (err) => console.error("Error loading Jun-kun:", err));
 
-// パンモデルの読み込み (全8種類に画像テクスチャを確実に適用！)
+// Unityで使用していたBlender製パンを取り込み、各パンに最適なマテリアル・テクスチャを適用！
+const unityBreadModels = {
+  bread_melon: 'bread_melon_unity',
+  bread_croissant: 'bread_croissant_unity',
+  bread_cream: 'bread_cream_unity',
+  bread_burger: 'bread_burger_unity',
+  bread_egg: 'bread_egg_unity',
+  bread_mushroom: 'bread_mushroom_unity',
+  bread_negi: 'bread_negi_unity',
+  bread_cocoa: 'bread_cocoa_unity',
+  bread_burnt: 'bread_burnt_unity'
+};
 Object.keys(BREAD_TYPES).forEach((key) => {
-  loader.load(`models/${key}.glb?${CACHE_BUST}`, (gltf) => {
+  loader.load(`models/${unityBreadModels[key] || key}.glb?${CACHE_BUST}`, (gltf) => {
     const model = gltf.scene;
     
     model.traverse((child) => {
       if (child.isMesh) {
         child.castShadow = true;
         child.receiveShadow = true;
+        // Blender製パン（クリームパン・バーガー・たまご・きのこ・ねぎ・ココア・新コゲパン）は精巧な多色マテリアルを保持
+        if (key === 'bread_cream' || key === 'bread_burger' || key === 'bread_egg' || 
+            key === 'bread_mushroom' || key === 'bread_negi' || key === 'bread_cocoa' || key === 'bread_burnt') {
+          return;
+        }
+
         if (key === 'bread_melon') {
           child.material = new THREE.MeshStandardMaterial({ map: melonTex, roughness: 0.5 });
         } else if (key === 'bread_croissant') {
           child.material = new THREE.MeshStandardMaterial({ map: croissantTex, roughness: 0.45 });
-        } else if (key === 'bread_loaf') {
-          child.material = new THREE.MeshStandardMaterial({ map: loafTex, roughness: 0.55 });
-        } else if (key === 'bread_cornet') {
-          child.material = new THREE.MeshStandardMaterial({ map: cornetTex, roughness: 0.45 });
-        } else if (key === 'bread_baguette') {
-          child.material = new THREE.MeshStandardMaterial({ map: baguetteTex, roughness: 0.5 });
-        } else if (key === 'bread_anpan') {
-          child.material = new THREE.MeshStandardMaterial({ map: anpanTex, roughness: 0.5 });
         } else if (key === 'bread_gold') {
-          child.material = new THREE.MeshStandardMaterial({ color: 0xFFD700, metalness: 0.9, roughness: 0.15 });
-        } else if (key === 'bread_burnt') {
-          child.material = new THREE.MeshStandardMaterial({ map: burntTex, roughness: 0.95 });
+          child.material = new THREE.MeshStandardMaterial({
+            color: 0xFFD700,
+            metalness: 0.25,
+            roughness: 0.3,
+            emissive: 0xB58900,
+            emissiveIntensity: 0.45
+          });
         }
       }
     });
@@ -1099,7 +1064,16 @@ let spawnTimer = 0;
 
 function chooseBreadType() {
   if (gameState.isFever) {
-    return Math.random() < 0.6 ? 'bread_gold' : 'bread_melon';
+    // フィーバー中はお邪魔コゲパンは一切出ない！
+    // 35%の確率で「金のパン」、残り65%は全種類の美味しいパンが色とりどりに降り注ぐ！
+    if (Math.random() < 0.35) {
+      return 'bread_gold';
+    }
+    const feverBreads = [
+      'bread_burger', 'bread_egg', 'bread_croissant', 'bread_melon',
+      'bread_cream', 'bread_mushroom', 'bread_negi', 'bread_cocoa'
+    ];
+    return feverBreads[Math.floor(Math.random() * feverBreads.length)];
   }
   const r = Math.random();
   let acc = 0;
@@ -1107,7 +1081,7 @@ function chooseBreadType() {
     acc += val.prob;
     if (r <= acc) return key;
   }
-  return 'bread_loaf';
+  return 'bread_croissant';
 }
 
 function spawnBread() {
@@ -1148,7 +1122,7 @@ function showScorePopup(x, y, text, color = '#D34600') {
   pop.className = 'catch-popup';
   pop.innerText = text;
   pop.style.color = color;
-  pop.style.left = `${x}px`;
+  pop.style.left = `${Math.max(8, Math.min(x, container.clientWidth - 190))}px`;
   pop.style.top = `${y}px`;
   popupContainer.appendChild(pop);
   setTimeout(() => pop.remove(), 850);
@@ -1160,11 +1134,32 @@ function addBreadToTower(typeKey) {
   if (!template) return;
 
   const towerItem = template.clone();
-  towerItem.scale.set(0.18, 0.18, 0.18);
+  const def = BREAD_TYPES[typeKey];
+  const tScale = (def && def.towerScale) ? def.towerScale : 0.16;
+  towerItem.scale.set(tScale, tScale, tScale);
+
+  // プレイヤーから見て美味しそうな天面が見える自然な角度でスタック
+  if (typeKey === 'bread_croissant') {
+    towerItem.rotation.set(0.40, 0, 0);
+  } else if (typeKey === 'bread_cream' || typeKey === 'bread_burnt' || typeKey === 'bread_cocoa') {
+    towerItem.rotation.set(0.20, 0, 0);
+  } else if (typeKey === 'bread_burger') {
+    towerItem.rotation.set(0.06, 0, 0);
+  } else if (typeKey === 'bread_egg') {
+    towerItem.rotation.set(0.25, 0, 0); // 目玉焼きが綺麗に見える角度
+  } else if (typeKey === 'bread_mushroom') {
+    towerItem.rotation.set(0.20, 0, 0); // きのこのカサが見える角度
+  } else if (typeKey === 'bread_negi') {
+    towerItem.rotation.set(0.22, 0, 0); // 輪切りネギが見える角度
+  } else if (typeKey === 'bread_melon') {
+    towerItem.rotation.set(0.25, 0, 0);
+  } else {
+    towerItem.rotation.set(0.15, 0, 0);
+  }
 
   const idx = gameState.towerBreads.length;
   // 純くんが抱える木箱の中にすっぽり収まり、順番に上に積み重なる！
-  const h = 0.40 + idx * 0.07;
+  const h = 0.36 + idx * 0.07;
   towerItem.position.set(gameState.playerX, h, 0.15);
   scene.add(towerItem);
 
@@ -1233,13 +1228,24 @@ function animate() {
       }
       updateTimerUI();
 
-      // フィーバー管理
+      // フィーバー＆パワーアップ管理
       if (gameState.isFever) {
         gameState.feverTimer -= delta;
         if (gameState.feverTimer <= 0) {
           gameState.isFever = false;
           sounds.setFever(false);
         }
+      }
+      if (gameState.megaBoxTimer > 0) {
+        gameState.megaBoxTimer -= delta;
+        if (junBreadBox) {
+          junBreadBox.scale.set(1.4, 1.4, 1.4);
+        }
+      } else if (junBreadBox) {
+        junBreadBox.scale.set(1.0, 1.0, 1.0);
+      }
+      if (gameState.speedTimer > 0) {
+        gameState.speedTimer -= delta;
       }
 
       // キーボード入力
@@ -1296,9 +1302,10 @@ function animate() {
         }
       }
     } else if (gameState.isRunning) {
-      // 通常ゲームプレイ中の移動
+      // 通常ゲームプレイ中の移動（ねぎパンのシャキシャキダッシュ時は28.0へ高速化！）
       const diff = gameState.targetX - gameState.playerX;
-      gameState.playerX += diff * Math.min(1.0, GAME_CONFIG.moveSpeed * delta);
+      const currentSpeed = (gameState.speedTimer > 0) ? 28.0 : GAME_CONFIG.moveSpeed;
+      gameState.playerX += diff * Math.min(1.0, currentSpeed * delta);
       const limitX = getSafeMoveLimit();
       gameState.playerX = Math.max(-limitX, Math.min(limitX, gameState.playerX));
 
@@ -1324,7 +1331,7 @@ function animate() {
         // 木箱の中のパンを純くんの移動に追従＆可愛く揺らす（ゲーム中のみ）
         gameState.towerBreads.forEach((bread, idx) => {
           bread.position.x = gameState.playerX;
-          bread.position.y = 0.40 + idx * 0.07;
+          bread.position.y = 0.36 + idx * 0.07;
           bread.position.z = 0.15;
           bread.rotation.z = Math.sin(clock.getElapsedTime() * 4 + idx) * 0.05;
           bread.rotation.y = idx * 0.2;
@@ -1349,9 +1356,10 @@ function animate() {
         b.mesh.rotation.y += b.rotSpeedY * delta;
         b.mesh.position.x += Math.sin(clock.getElapsedTime() * 3 + b.wobblePhase) * 0.01;
 
-        // キャッチ判定（縮小された純くんにピッタリの当たり判定）
+        // キャッチ判定（メガトレイ発動時は当たり判定が0.85へ大幅拡大！）
+        const currentRadius = (gameState.megaBoxTimer > 0) ? 0.85 : GAME_CONFIG.catchRadius;
         const dist = Math.abs(b.mesh.position.x - gameState.playerX);
-        if (b.mesh.position.y <= 1.3 && b.mesh.position.y >= 0.15 && dist < GAME_CONFIG.catchRadius) {
+        if (b.mesh.position.y <= 1.3 && b.mesh.position.y >= 0.15 && dist < currentRadius) {
           scene.remove(b.mesh);
           activeBreads.splice(i, 1);
 
@@ -1362,27 +1370,60 @@ function animate() {
           const screenX = (screenPos.x * 0.5 + 0.5) * container.clientWidth;
           const screenY = (-(screenPos.y * 0.5) + 0.5) * container.clientHeight;
 
+          const scoreMul = gameState.isFever ? 2 : 1;
+          const gainedScore = b.def.score * scoreMul;
+
           if (b.type === 'bread_burnt') {
-            // お邪魔コゲパン：-100点、コンボリセット、フィーバー終了
+            // お邪魔コゲ食パン：-100点、コンボリセット、フィーバー解除
             sounds.playBurnt();
             sounds.setFever(false);
             gameState.score = Math.max(0, gameState.score - 100);
             updateScoreUI();
-            showScorePopup(screenX - 45, screenY, "⚠️ コゲパン! -¥100", "#D50000");
+            showScorePopup(screenX - 45, screenY, "⚠️ コゲ食パン! -¥100", "#D50000");
             gameState.combo = 0;
             gameState.isFever = false;
+          } else if (b.type === 'bread_egg') {
+            // たまごパン：とろ〜りフィーバー発動（8秒間スコア2倍）
+            sounds.playCatch(gameState.combo);
+            gameState.score += gainedScore;
+            updateScoreUI();
+            gameState.combo++;
+            addBreadToTower(b.type);
+            gameState.isFever = true;
+            gameState.feverTimer = 8.0;
+            sounds.playFever();
+            sounds.setFever(true);
+            showScorePopup(screenX - 45, screenY, `🍳 とろ〜りフィーバー! +¥${gainedScore}`, "#FF9800");
+          } else if (b.type === 'bread_mushroom') {
+            // きのこパン：メガトレイ発動（8秒間木箱巨大化＆キャッチ判定拡大）
+            sounds.playCatch(gameState.combo);
+            gameState.score += gainedScore;
+            updateScoreUI();
+            gameState.combo++;
+            addBreadToTower(b.type);
+            gameState.megaBoxTimer = 8.0;
+            showScorePopup(screenX - 45, screenY, `🍄 メガトレイ発動! +¥${gainedScore}`, "#4CAF50");
+          } else if (b.type === 'bread_negi') {
+            // ねぎパン：シャキシャキダッシュ発動（8秒間移動速度アップ）
+            sounds.playCatch(gameState.combo);
+            gameState.score += gainedScore;
+            updateScoreUI();
+            gameState.combo++;
+            addBreadToTower(b.type);
+            gameState.speedTimer = 8.0;
+            showScorePopup(screenX - 45, screenY, `🧅 シャキシャキダッシュ! +¥${gainedScore}`, "#009688");
           } else if (b.type === 'bread_gold') {
             sounds.playGoldCatch();
-            gameState.score += b.def.score;
+            gameState.score += gainedScore;
             updateScoreUI();
-            showScorePopup(screenX - 40, screenY, `✨ +¥${b.def.score}`, "#E65100");
+            showScorePopup(screenX - 40, screenY, `✨ ${b.def.name} +¥${gainedScore}`, "#E65100");
             gameState.combo++;
             addBreadToTower(b.type);
           } else {
             sounds.playCatch(gameState.combo);
-            gameState.score += b.def.score;
+            gameState.score += gainedScore;
             updateScoreUI();
-            showScorePopup(screenX - 30, screenY, `+¥${b.def.score}`, "#D34600");
+            showScorePopup(screenX - 30, screenY, `${b.def.name} +¥${gainedScore}`, "#D34600");
             gameState.combo++;
             addBreadToTower(b.type);
           }
@@ -1489,16 +1530,7 @@ function startGame() {
   gameState.timeLeft = GAME_CONFIG.duration;
   gameState.combo = 0;
   gameState.isFever = false;
-  gameState.breadCount = {
-    bread_loaf: 0,
-    bread_croissant: 0,
-    bread_melon: 0,
-    bread_cornet: 0,
-    bread_baguette: 0,
-    bread_anpan: 0,
-    bread_gold: 0,
-    bread_burnt: 0
-  };
+  gameState.breadCount = Object.fromEntries(Object.keys(BREAD_TYPES).map(key => [key, 0]));
   updateScoreUI();
   updateTimerUI();
 
@@ -1566,7 +1598,7 @@ function endGame() {
   if (gameState.score >= 15000) {
     rank = "👑 伝説の黒字経営マスター！";
   } else if (gameState.score >= 10000) {
-    rank = "🌟 三軒茶屋の大繁盛店長！";
+    rank = "🌟 プクムクの大繁盛店長！";
   } else if (gameState.score >= 5000) {
     rank = "🥐 街の愛されパン職人！";
   } else if (gameState.score >= 2000) {
@@ -1574,16 +1606,18 @@ function endGame() {
   }
   rankBadge.innerText = rank;
 
-  // パン内訳の表示（全8種対応）
+  // パン内訳の表示（全10種対応）
   breadStats.innerHTML = `
-    <div>🍞 食パン: ${gameState.breadCount.bread_loaf}個</div>
-    <div>🥐 クロワッサン: ${gameState.breadCount.bread_croissant}個</div>
-    <div>🍈 メロンパン: ${gameState.breadCount.bread_melon}個</div>
-    <div>🐚 コロネ: ${gameState.breadCount.bread_cornet}個</div>
-    <div>🥖 バゲット: ${gameState.breadCount.bread_baguette}個</div>
-    <div>🌸 あんぱん: ${gameState.breadCount.bread_anpan}個</div>
-    <div>✨ 金パン: ${gameState.breadCount.bread_gold}個</div>
-    <div>⚠️ コゲパン: ${gameState.breadCount.bread_burnt}個</div>
+    <div>🥐 クロワッサン: ${gameState.breadCount.bread_croissant || 0}個</div>
+    <div>🍈 メロンパン: ${gameState.breadCount.bread_melon || 0}個</div>
+    <div>🥯 クリームパン: ${gameState.breadCount.bread_cream || 0}個</div>
+    <div>🍔 バーガー: ${gameState.breadCount.bread_burger || 0}個</div>
+    <div>🍳 たまごパン: ${gameState.breadCount.bread_egg || 0}個</div>
+    <div>🍄 きのこパン: ${gameState.breadCount.bread_mushroom || 0}個</div>
+    <div>🧅 ねぎパン: ${gameState.breadCount.bread_negi || 0}個</div>
+    <div>🍫 ココアパン: ${gameState.breadCount.bread_cocoa || 0}個</div>
+    <div>✨ 金パン: ${gameState.breadCount.bread_gold || 0}個</div>
+    <div>⚠️ コゲパン: ${gameState.breadCount.bread_burnt || 0}個</div>
   `;
 
   // 終了演出: 純くん自身は中央（X = 0）に向かって軽快に歩いていく！
@@ -1591,56 +1625,180 @@ function endGame() {
 
   // 中央に到着してお辞儀（Bow）が終わった頃（2.8秒後）にリザルト画面を表示！
   setTimeout(() => {
-    saveAndRenderRanking(gameState.score);
+    prepareResultRanking(gameState.score);
     resultScreen.classList.add('active');
   }, 2800);
 }
 
-// --- 8. 歴代プクムク純利益ランキングシステム ---
-const RANKING_STORAGE_KEY = 'pukumuku_bakery_ranking_v1';
+// --- 8. 全国プクムク純利益ランキングシステム ---
+const RANKING_API_URL = '/api/ranking';
+const PLAYER_NAME_STORAGE_KEY = 'pukumuku_player_name_v1';
+const LOCAL_FALLBACK_KEY = 'pukumuku_bakery_ranking_fallback_v1';
 
-function getRankings() {
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function renderRankingHTML(rankings, highlightId = null) {
+  if (!rankings || rankings.length === 0) {
+    return '<div class="ranking-row"><span style="flex:1; text-align:center;">まだ記録がありません</span></div>';
+  }
+  const medals = ['🥇', '🥈', '🥉', '4位', '5位', '6位', '7位', '8位', '9位', '10位'];
+  return rankings.map((item, idx) => {
+    const isHighlight = highlightId && (item.id === highlightId);
+    return `
+      <div class="ranking-row ${isHighlight ? 'current-play' : ''}">
+        <span class="ranking-rank">${medals[idx] || (idx + 1 + '位')}</span>
+        <span class="ranking-name" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</span>
+        <span class="ranking-score">¥${(item.score || 0).toLocaleString()}</span>
+        <span class="ranking-date">${escapeHtml(item.date || '')}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+// ランキング取得（サーバーAPI ➔ 失敗時はローカルフォールバック）
+async function fetchOnlineRankings(containerId = 'ranking-list', highlightId = null) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = '<div class="ranking-row"><span style="flex:1; text-align:center; color:#8D6E63;">⏳ ランキング読込中...</span></div>';
+
   try {
-    const raw = localStorage.getItem(RANKING_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    return [];
+    const res = await fetch(RANKING_API_URL, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (data.status === 'ok' && Array.isArray(data.rankings)) {
+      el.innerHTML = renderRankingHTML(data.rankings, highlightId);
+      // ローカルにもキャッシュ
+      try {
+        localStorage.setItem(LOCAL_FALLBACK_KEY, JSON.stringify(data.rankings));
+      } catch (e) {}
+      return data.rankings;
+    }
+    throw new Error('Invalid data');
+  } catch (err) {
+    console.warn('Online ranking unavailable, fallback to local:', err);
+    // オフライン・エラー時のローカルフォールバック
+    let localRankings = [];
+    try {
+      const raw = localStorage.getItem(LOCAL_FALLBACK_KEY);
+      localRankings = raw ? JSON.parse(raw) : [];
+    } catch (e) {}
+    if (localRankings.length > 0) {
+      el.innerHTML = renderRankingHTML(localRankings, highlightId);
+    } else {
+      el.innerHTML = '<div class="ranking-row"><span style="flex:1; text-align:center; color:#8D6E63;">ネットワーク未接続（オフライン）</span></div>';
+    }
   }
 }
 
-function saveAndRenderRanking(currentScore) {
-  let rankings = getRankings();
-  const now = new Date();
-  const dateStr = `${now.getMonth() + 1}/${now.getDate()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+// リザルト画面表示時の準備
+function prepareResultRanking(currentScore) {
+  const nameInput = document.getElementById('player-name-input');
+  const submitBtn = document.getElementById('submit-ranking-btn');
+  const feedbackEl = document.getElementById('ranking-feedback');
 
-  const currentEntry = {
-    id: Date.now(),
-    score: currentScore,
-    date: dateStr,
-    totalBreads: Object.values(gameState.breadCount).reduce((a, b) => a + b, 0)
-  };
+  // 前回入力した名前を復元
+  const savedName = localStorage.getItem(PLAYER_NAME_STORAGE_KEY) || '';
+  if (nameInput) {
+    nameInput.value = savedName;
+    nameInput.disabled = false;
+  }
+  if (submitBtn) {
+    submitBtn.innerText = '登録！';
+    submitBtn.disabled = false;
+  }
+  if (feedbackEl) {
+    feedbackEl.innerText = '';
+  }
 
-  rankings.push(currentEntry);
-  rankings.sort((a, b) => b.score - a.score);
-  rankings = rankings.slice(0, 5);
+  // 最新ランキングを取得・描画
+  fetchOnlineRankings('ranking-list');
+}
 
+// スコア送信
+async function submitPlayerScore() {
+  const nameInput = document.getElementById('player-name-input');
+  const submitBtn = document.getElementById('submit-ranking-btn');
+  const feedbackEl = document.getElementById('ranking-feedback');
+
+  let name = (nameInput && nameInput.value) ? nameInput.value.trim() : '';
+  if (!name) {
+    name = '名無しパン職人';
+  }
+  if (name.length > 10) {
+    name = name.slice(0, 10);
+  }
+
+  // 名前のローカル保存
   try {
-    localStorage.setItem(RANKING_STORAGE_KEY, JSON.stringify(rankings));
+    localStorage.setItem(PLAYER_NAME_STORAGE_KEY, name);
   } catch (e) {}
 
-  const rankingListEl = document.getElementById('ranking-list');
-  if (rankingListEl) {
-    const medals = ['🥇', '🥈', '🥉', '4位', '5位'];
-    rankingListEl.innerHTML = rankings.map((item, idx) => {
-      const isCurrent = item.id === currentEntry.id;
-      return `
-        <div class="ranking-row ${isCurrent ? 'current-play' : ''}">
-          <span class="ranking-rank">${medals[idx] || (idx + 1 + '位')}</span>
-          <span class="ranking-score">¥${item.score.toLocaleString()}</span>
-          <span class="ranking-date">${item.date}</span>
-        </div>
-      `;
-    }).join('');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerText = '登録中...';
+  }
+  if (nameInput) {
+    nameInput.disabled = true;
+  }
+
+  try {
+    const res = await fetch(RANKING_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: name,
+        score: gameState.score
+      })
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    if (data.status === 'ok') {
+      const pos = data.rankPosition;
+      if (feedbackEl) {
+        if (pos && pos <= 10) {
+          feedbackEl.innerText = `🎉 見事全国 ${pos}位 にランクイン！`;
+          feedbackEl.style.color = '#E65100';
+        } else if (pos) {
+          feedbackEl.innerText = `✨ 全国 ${pos}位 に記録されました！`;
+          feedbackEl.style.color = '#2E7D32';
+        } else {
+          feedbackEl.innerText = '✓ ランキングに登録完了！';
+          feedbackEl.style.color = '#2E7D32';
+        }
+      }
+      if (submitBtn) {
+        submitBtn.innerText = '登録完了✓';
+      }
+      // 最新ランキングを描画（自分の登録エントリをハイライト）
+      const listEl = document.getElementById('ranking-list');
+      if (listEl && data.rankings) {
+        listEl.innerHTML = renderRankingHTML(data.rankings, data.currentEntry?.id);
+      }
+    } else {
+      throw new Error(data.message || 'Registration failed');
+    }
+  } catch (err) {
+    console.error('Score submission error:', err);
+    if (feedbackEl) {
+      feedbackEl.innerText = '⚠️ 送信に失敗しました（オフライン）';
+      feedbackEl.style.color = '#D32F2F';
+    }
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerText = '再試行';
+    }
+    if (nameInput) {
+      nameInput.disabled = false;
+    }
   }
 }
 
@@ -1658,10 +1816,12 @@ function bindButtonAction(id, callback) {
   });
 }
 
+// ゲームスタートボタン
 bindButtonAction('start-btn', () => {
   if (!isAssetsLoaded) {
-    if (startBtn) {
-      startBtn.innerText = '⏳ 準備中...少々お待ちください';
+    const sBtn = document.getElementById('start-btn');
+    if (sBtn) {
+      sBtn.innerText = '⏳ 準備中...少々お待ちください';
     }
     loadingManager.onLoad = () => {
       isAssetsLoaded = true;
@@ -1672,8 +1832,27 @@ bindButtonAction('start-btn', () => {
   startGame();
 });
 
+// もう一度あそぶボタン
 bindButtonAction('restart-btn', () => startGame());
 
+// スコア登録ボタン
+bindButtonAction('submit-ranking-btn', () => submitPlayerScore());
+
+// スタート画面のランキングモーダル開閉
+const rankingModal = document.getElementById('ranking-modal');
+bindButtonAction('open-ranking-btn', () => {
+  if (rankingModal) {
+    rankingModal.classList.add('active');
+    fetchOnlineRankings('modal-ranking-list');
+  }
+});
+bindButtonAction('close-ranking-btn', () => {
+  if (rankingModal) {
+    rankingModal.classList.remove('active');
+  }
+});
+
+// サウンド切替ボタン
 const soundBtn = document.getElementById('sound-btn');
 if (soundBtn) {
   const handleSoundToggle = (e) => {
@@ -1692,4 +1871,5 @@ const unlockAudio = () => {
 };
 window.addEventListener('pointerdown', unlockAudio, { once: true });
 window.addEventListener('touchstart', unlockAudio, { once: true });
+
 

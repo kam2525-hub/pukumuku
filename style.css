@@ -184,7 +184,7 @@ html {
 
 .highlight {
   color: #D34600;
-  font-size: 30px;
+  font-size: clamp(20px, 6vw, 25px);
   text-shadow: 2px 2px 0 #FFF;
 }
 
@@ -278,15 +278,25 @@ html {
 }
 
 .bread-stats {
-  display: flex;
-  justify-content: space-around;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 8px;
+  text-align: left;
   background: #FFF2D6;
-  border-radius: 14px;
-  padding: 10px;
-  margin-bottom: 16px;
-  font-size: 13px;
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 11px;
   font-weight: 800;
   color: #5D2E0B;
+  max-height: 125px;
+  overflow-y: auto;
+}
+
+.bread-stats div {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .greeting-text {
@@ -296,22 +306,139 @@ html {
   margin-bottom: 18px;
 }
 
+/* サブボタン・ボタングループ */
+.start-btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.sub-btn {
+  background: #FFF;
+  color: #D34600;
+  border: 2px solid #E0822A;
+  border-radius: 30px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 3px 0 #E0822A;
+}
+
+.sub-btn:hover {
+  background: #FFF8E7;
+  transform: translateY(-1px);
+}
+
+.sub-btn:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+/* 📛 ネーム登録ボックス */
+.ranking-register-box {
+  background: #FFF3DE;
+  border: 2px solid #FFA726;
+  border-radius: 14px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.register-label {
+  font-size: 12px;
+  font-weight: 900;
+  color: #793802;
+  margin-bottom: 6px;
+}
+
+.register-input-group {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.player-name-input {
+  flex: 1;
+  min-width: 0;
+  background: #FFF;
+  border: 2px solid #E0822A;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #5D2E0B;
+  outline: none;
+  font-family: inherit;
+}
+
+.player-name-input:focus {
+  border-color: #FF5722;
+  box-shadow: 0 0 6px rgba(255, 87, 34, 0.3);
+}
+
+.submit-ranking-btn {
+  background: #FF8F00;
+  color: #FFF;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 3px 0 #D84315;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.submit-ranking-btn:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+.submit-ranking-btn:disabled {
+  background: #BDBDBD;
+  box-shadow: none;
+  cursor: default;
+}
+
+.register-note {
+  font-size: 10px;
+  color: #8D6E63;
+  margin-top: 4px;
+}
+
+.ranking-feedback {
+  font-size: 12px;
+  font-weight: 900;
+  margin-top: 5px;
+  color: #2E7D32;
+  min-height: 16px;
+}
+
 /* 🏆 歴代ランキングスタイル */
 .ranking-section {
   background: #FFF8E7;
   border: 2px dashed #E0822A;
-  border-radius: 16px;
-  padding: 12px 14px;
-  margin-bottom: 16px;
+  border-radius: 14px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
   text-align: left;
 }
 
+.modal-ranking-section {
+  max-height: 320px;
+}
+
 .ranking-header {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 900;
   color: #793802;
   text-align: center;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   padding-bottom: 4px;
   border-bottom: 1px solid #FFE0B2;
 }
@@ -319,21 +446,25 @@ html {
 .ranking-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  max-height: 140px;
+  gap: 5px;
+  max-height: 135px;
   overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.modal-ranking-section .ranking-list {
+  max-height: 280px;
 }
 
 .ranking-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
   color: #5D2E0B;
-  padding: 4px 8px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.7);
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.75);
 }
 
 .ranking-row.current-play {
@@ -341,6 +472,7 @@ html {
   color: #D84315;
   font-weight: 900;
   animation: pulseRank 1s infinite alternate;
+  border: 1px solid #FFB300;
 }
 
 @keyframes pulseRank {
@@ -354,25 +486,43 @@ html {
 }
 
 .ranking-rank {
-  width: 28px;
+  width: 26px;
   font-weight: 900;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.ranking-name {
+  flex: 1;
+  min-width: 0;
+  padding: 0 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #4E342E;
 }
 
 .ranking-score {
   color: #E65100;
   font-weight: 900;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .ranking-date {
-  font-size: 11px;
+  font-size: 10px;
   color: #9E7D63;
+  margin-left: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* キャッチポップアップ */
 .catch-popup {
   position: absolute;
   font-weight: 900;
-  font-size: 26px;
+  font-size: 17px;
+  white-space: nowrap;
   pointer-events: none;
   animation: floatUp 0.8s ease-out forwards;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);

@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>純くんの焼きたてパンキャッチ！ - パン工房プクムク</title>
-  <link rel="stylesheet" href="style.css?v=20260925_4">
+  <link rel="stylesheet" href="style.css?v=preview20261103e">
   <!-- Google Fonts: かわいい丸ゴシック -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -58,8 +58,25 @@
         <div class="instruction">
           <div class="icon-touch">👉 📱</div>
           <p>画面を<strong>ゆびで左右になぞるだけ</strong>！<br><small>(パソコンはマウスか ◀ ▶ キー)</small></p>
+          <p><small>🍳 たまご(2倍)・🍄 きのこ(巨大化)・🧅 ねぎ(快速)！<br>✨ 金のパンは高得点！ ⚠️ コゲ食パンは避けよう</small></p>
         </div>
-        <button id="start-btn" class="main-btn">パンを焼く！（スタート）</button>
+        <div class="start-btn-group">
+          <button id="start-btn" class="main-btn">ゲームスタート！</button>
+          <button id="open-ranking-btn" class="sub-btn">🏆 全国のランキングを見る</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- スタート画面用 全国ランキングモーダル -->
+    <div id="ranking-modal" class="overlay">
+      <div class="modal-card">
+        <div class="result-header">🏆 全国パン職人ランキング TOP 10</div>
+        <div class="ranking-section modal-ranking-section">
+          <div id="modal-ranking-list" class="ranking-list">
+            <!-- JSでリアルタイム生成 -->
+          </div>
+        </div>
+        <button id="close-ranking-btn" class="main-btn">閉じる</button>
       </div>
     </div>
 
@@ -77,11 +94,22 @@
           <!-- 集めたパンの内訳 -->
         </div>
 
-        <!-- 🏆 歴代プクムクランキング -->
+        <!-- 📛 パン職人ネーム登録フォーム -->
+        <div id="ranking-register-box" class="ranking-register-box">
+          <div class="register-label">📛 全国のランキングに登録！</div>
+          <div class="register-input-group">
+            <input type="text" id="player-name-input" class="player-name-input" maxlength="10" placeholder="ニックネーム (最大10文字)">
+            <button id="submit-ranking-btn" class="submit-ranking-btn">登録！</button>
+          </div>
+          <div class="register-note">※個人情報（本名・電話番号等）は入力しないでね</div>
+          <div id="ranking-feedback" class="ranking-feedback"></div>
+        </div>
+
+        <!-- 🏆 全国プクムク純利益ランキング -->
         <div class="ranking-section">
-          <div class="ranking-header">🏆 歴代プクムク純利益ランキング</div>
+          <div class="ranking-header">🏆 全国プクムク純利益ランキング TOP 10</div>
           <div id="ranking-list" class="ranking-list">
-            <!-- JSでランキングが生成される -->
+            <!-- JSでリアルタイム生成 -->
           </div>
         </div>
 
@@ -91,7 +119,7 @@
     </div>
   </div>
 
-  <script src="game.js?v=20261003_1"></script>
+  <script src="game.js?v=preview20261103h"></script>
 </body>
 
 </html>

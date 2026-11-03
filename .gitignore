@@ -114,4 +114,6 @@ test_cam_frames/
 test_*.png
 test_*.gif
 s05_*.png
+verify_*.png
+final_*.png
 __pycache__/
