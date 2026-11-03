@@ -1631,7 +1631,7 @@ function endGame() {
 }
 
 // --- 8. 全国プクムク純利益ランキングシステム ---
-const RANKING_API_URL = '/api/ranking';
+const RANKING_API_URL = 'https://script.google.com/macros/s/AKfycbxTZ2XwK5kDfcIzTN_9xCflC9TNH7mgaVanEJirthh1rrnnPlNCTcOHgANm7EyDekAITg/exec';
 const PLAYER_NAME_STORAGE_KEY = 'pukumuku_player_name_v1';
 const LOCAL_FALLBACK_KEY = 'pukumuku_bakery_ranking_fallback_v1';
 
@@ -1667,6 +1667,17 @@ function getMergedLocalRankings() {
   }
 }
 
+function formatDateDisplay(raw) {
+  if (!raw) return '';
+  try {
+    const d = new Date(raw);
+    if (!isNaN(d.getTime())) {
+      return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    }
+  } catch (e) {}
+  return String(raw).slice(0, 11);
+}
+
 function escapeHtml(str) {
   return String(str || '')
     .replace(/&/g, '&amp;')
@@ -1688,7 +1699,7 @@ function renderRankingHTML(rankings, highlightId = null) {
         <span class="ranking-rank">${medals[idx] || (idx + 1 + '位')}</span>
         <span class="ranking-name" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</span>
         <span class="ranking-score">¥${(item.score || 0).toLocaleString()}</span>
-        <span class="ranking-date">${escapeHtml(item.date || '')}</span>
+        <span class="ranking-date">${escapeHtml(formatDateDisplay(item.date))}</span>
       </div>
     `;
   }).join('');
@@ -1779,7 +1790,7 @@ async function submitPlayerScore() {
   try {
     const res = await fetch(RANKING_API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ name: name, score: gameState.score })
     });
     if (res.ok) {
@@ -1794,7 +1805,12 @@ async function submitPlayerScore() {
 
   // 2. 結果の反映
   if (serverSuccess && serverData) {
-    const pos = serverData.rankPosition;
+    let pos = serverData.rankPosition;
+    if (!pos && Array.isArray(serverData.rankings)) {
+      // GAS側から順位を特定
+      const matchIdx = serverData.rankings.findIndex(r => r.name === name && r.score === gameState.score);
+      if (matchIdx !== -1) pos = matchIdx + 1;
+    }
     if (feedbackEl) {
       if (pos && pos <= 10) {
         feedbackEl.innerText = `🎉 見事全国 ${pos}位 にランクイン！`;
