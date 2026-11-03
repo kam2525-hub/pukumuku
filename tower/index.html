@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>ぐらぐら！サンドイッチタワー - パン工房プクムク</title>
+  <link rel="stylesheet" href="style.css?v=tower20261103a">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800;900&display=swap" rel="stylesheet">
+  <!-- Three.js & GLTFLoader -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <!-- Cannon.js (軽量3D物理エンジン) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+</head>
+
+<body>
+  <div id="game-container">
+    <!-- 3Dキャンバス -->
+    <canvas id="webgl-canvas"></canvas>
+
+    <!-- ヘッダーUI（ステータス表示） -->
+    <div id="header-ui">
+      <!-- 到達高さ -->
+      <div class="stat-card">
+        <span class="stat-label">現在の高さ</span>
+        <div class="stat-value"><span id="height-val">0.0</span><span class="stat-unit">cm</span></div>
+      </div>
+
+      <!-- 積んだ具材数 -->
+      <div class="stat-card">
+        <span class="stat-label">具材の数</span>
+        <div class="stat-value"><span id="count-val">0</span><span class="stat-unit">段</span></div>
+      </div>
+
+      <!-- ライフ（3アウト制） -->
+      <div class="stat-card lives-card">
+        <span class="stat-label">ライフ（落下3回で終了）</span>
+        <div id="lives-container" class="lives-container">❤️❤️❤️</div>
+      </div>
+    </div>
+
+    <!-- トップサブアクション（戻る・サウンド） -->
+    <div class="top-actions">
+      <a href="../" class="hud-btn">🏠 ゲーム選択</a>
+      <button id="sound-btn" class="hud-btn">🔊 サウンド</button>
+    </div>
+
+    <!-- 操作ガイド -->
+    <div id="tap-guide">👇 画面タップで具材を落とそう！</div>
+
+    <!-- トースト通知 -->
+    <div id="toast-msg"></div>
+
+    <!-- スタート画面モーダル -->
+    <div id="start-modal" class="overlay active">
+      <div class="modal-card">
+        <div class="modal-badge">🥖 パン工房プクムク 新作ゲーム</div>
+        <h1 class="modal-title">ぐらぐら！<br>サンドイッチタワー 🍔</h1>
+        <p class="modal-desc">ゆれるトングから具材を落として、崩さないように高く積み上げよう！</p>
+        
+        <div class="instruction-box">
+          <p>👉 <strong>画面をタップ</strong>するだけで具材がポトッ！</p>
+          <p>⚠️ お皿から<strong>具材が3個落ちたら</strong>営業終了！</p>
+          <p>🏆 どこまで高く積み上げられるか限界に挑戦だ！</p>
+        </div>
+
+        <button id="start-btn" class="main-btn">ゲームスタート！</button>
+        <a href="../" class="sub-btn">🏠 ゲーム選択へもどる</a>
+      </div>
+    </div>
+
+    <!-- リザルト画面モーダル -->
+    <div id="result-modal" class="overlay">
+      <div class="modal-card">
+        <div class="modal-badge">🎉 営業終了！</div>
+        <h2 class="modal-title">本日のサンドイッチ</h2>
+
+        <div class="result-score-box">
+          <div class="result-score-label">獲得純利益</div>
+          <div class="result-score-val">¥<span id="final-score-val">0</span></div>
+          <div id="result-title-badge" class="result-title-badge">ボリューム満点バーガー！</div>
+        </div>
+
+        <div class="result-detail-grid">
+          <div class="result-detail-item">
+            最高到達点
+            <span id="final-height-val">0.0 cm</span>
+          </div>
+          <div class="result-detail-item">
+            積み上げた具材
+            <span id="final-count-val">0 個</span>
+          </div>
+        </div>
+
+        <button id="restart-btn" class="main-btn">もう一回あそぶ！</button>
+        <a href="../" class="sub-btn">🏠 ゲーム選択へもどる</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="tower_game.js?v=tower20261103a"></script>
+</body>
+
+</html>

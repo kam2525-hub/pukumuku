@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>純くんの焼きたてパンキャッチ！ - パン工房プクムク</title>
+  <link rel="stylesheet" href="style.css?v=20261103_v2">
+  <!-- Google Fonts: かわいい丸ゴシック -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800;900&display=swap"
+    rel="stylesheet">
+  <!-- Three.js & GLTFLoader -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+</head>
+
+<body>
+  <div id="game-container">
+    <!-- デバッグエラートースト -->
+    <div id="debug-toast"></div>
+
+    <!-- 3Dレンダリング用キャンバス -->
+    <canvas id="webgl-canvas"></canvas>
+
+    <!-- ヘッダーUI（スコア・タイマー） -->
+    <div id="header-ui">
+      <div class="score-card">
+        <span class="label">本日の純利益</span>
+        <div class="value-container">
+          <span class="currency">¥</span>
+          <span id="score-text">0</span>
+        </div>
+      </div>
+      <div class="timer-card">
+        <span class="label">のこり時間</span>
+        <div class="time-value">
+          <span id="timer-text">45</span><span class="unit">秒</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- サウンド切替ボタン -->
+    <button id="sound-btn" class="sound-toggle-btn" title="音量切替" aria-label="音量切替">🔊</button>
+
+    <!-- キャッチ時ポップアップエフェクトコンテナ -->
+    <div id="popup-container"></div>
+
+    <!-- スタートオーバーレイ画面 -->
+    <div id="start-screen" class="overlay active">
+      <div class="modal-card">
+        <div class="badge">パン工房プクムク 公式ゲーム</div>
+        <h1 class="game-title">純くんの<br><span class="highlight">焼きたてパンキャッチ！</span></h1>
+        <div class="char-preview">
+          <p class="desc">🥐 落ちてくるパンをキャッチして<br>お店の<strong>「純利益」</strong>を増やそう！</p>
+        </div>
+        <div class="instruction">
+          <div class="icon-touch">👉 📱</div>
+          <p>画面を<strong>ゆびで左右になぞるだけ</strong>！<br><small>(パソコンはマウスか ◀ ▶ キー)</small></p>
+          <p><small>🍳 たまご(2倍)・🍄 きのこ(巨大化)・🧅 ねぎ(快速)！<br>✨ 金のパンは高得点！ ⚠️ コゲ食パンは避けよう</small></p>
+        </div>
+        <div class="start-btn-group">
+          <button id="start-btn" class="main-btn">ゲームスタート！</button>
+          <div class="sub-btn-row">
+            <button id="open-ranking-btn" class="sub-btn">🏆 ランキング</button>
+            <button id="open-catalog-btn" class="sub-btn">📖 パン図鑑</button>
+          </div>
+          <a href="../" class="sub-btn back-portal-btn">🏠 ゲーム選択へもどる</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- パン図鑑モーダル -->
+    <div id="catalog-modal" class="overlay">
+      <div class="modal-card catalog-card">
+        <div class="result-header">📖 プクムク焼きたてパン図鑑</div>
+        <div class="catalog-scroll-area">
+          <img src="../bread_catalog.png?v=20261103_v2" class="catalog-img" alt="パン図鑑カタログ">
+        </div>
+        <div class="catalog-disclaimer">※ゲーム内の価格・見た目はイメージであり、実店舗の実際の商品・価格とは異なります。</div>
+        <button id="close-catalog-btn" class="main-btn">閉じる</button>
+      </div>
+    </div>
+
+    <!-- スタート画面用 全国ランキングモーダル -->
+    <div id="ranking-modal" class="overlay">
+      <div class="modal-card">
+        <div class="result-header">🏆 全国パン職人ランキング TOP 10</div>
+        <div class="ranking-section modal-ranking-section">
+          <div id="modal-ranking-list" class="ranking-list">
+            <!-- JSでリアルタイム生成 -->
+          </div>
+        </div>
+        <button id="close-ranking-btn" class="main-btn">閉じる</button>
+      </div>
+    </div>
+
+    <!-- リザルト画面 -->
+    <div id="result-screen" class="overlay">
+      <div class="modal-card result-card">
+        <div class="result-header">🎉 営業終了！ 🎉</div>
+        <div class="result-title">本日の純利益</div>
+        <div class="final-score">
+          <span class="currency">¥</span><span id="final-score-text">0</span>
+        </div>
+        <div id="rank-badge" class="rank-badge">大繁盛パン職人！</div>
+
+        <div class="bread-stats" id="bread-stats">
+          <!-- 集めたパンの内訳 -->
+        </div>
+
+        <!-- 📛 パン職人ネーム登録フォーム -->
+        <div id="ranking-register-box" class="ranking-register-box">
+          <div class="register-label">📛 全国のランキングに登録！</div>
+          <div class="register-input-group">
+            <input type="text" id="player-name-input" class="player-name-input" maxlength="10" placeholder="ニックネーム (最大10文字)">
+            <button id="submit-ranking-btn" class="submit-ranking-btn">登録！</button>
+          </div>
+          <div class="register-note">※個人情報（本名・電話番号等）は入力しないでね</div>
+          <div id="ranking-feedback" class="ranking-feedback"></div>
+        </div>
+
+        <!-- 🏆 全国プクムク純利益ランキング -->
+        <div class="ranking-section">
+          <div class="ranking-header">🏆 全国プクムク純利益ランキング TOP 10</div>
+          <div id="ranking-list" class="ranking-list">
+            <!-- JSでリアルタイム生成 -->
+          </div>
+        </div>
+
+        <p class="greeting-text">「ご来店ありがとうございました！」</p>
+        <div class="result-btn-group">
+          <button id="restart-btn" class="main-btn">もう一回あそぶ！</button>
+          <button id="result-catalog-btn" class="sub-btn">📖 パン図鑑を見る</button>
+          <a href="../" class="sub-btn back-portal-btn">🏠 ゲーム選択へもどる</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js?v=20261103_v2"></script>
+</body>
+
+</html>

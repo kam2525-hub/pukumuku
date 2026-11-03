@@ -846,7 +846,7 @@ const moonTex = createMoonTexture();
 const cloudTex = createCloudTexture();
 
 // 店舗モデルの読み込み＆全パーツへの美しいテクスチャ適用！
-loader.load(`models/pukumuku_blender_shop.glb?${CACHE_BUST}`, (gltf) => {
+loader.load(`../models/pukumuku_blender_shop.glb?${CACHE_BUST}`, (gltf) => {
   const shop = gltf.scene;
   shop.position.set(0, -0.16, -3.8);
   shop.scale.set(0.62, 0.62, 0.62);
@@ -884,7 +884,7 @@ if (headerUI) {
 }
 
 // 純くん（箱持ち＆上見上げ新モデル）の読み込み
-loader.load(`models/jun_kun_carry_box.glb?${CACHE_BUST}`, (gltf) => {
+loader.load(`../models/jun_kun_carry_box.glb?${CACHE_BUST}`, (gltf) => {
   junKun = gltf.scene;
   junKun.rotation.set(0, 0, 0);
 
@@ -946,7 +946,7 @@ const unityBreadModels = {
   bread_burnt: 'bread_burnt_unity'
 };
 Object.keys(BREAD_TYPES).forEach((key) => {
-  loader.load(`models/${unityBreadModels[key] || key}.glb?${CACHE_BUST}`, (gltf) => {
+  loader.load(`../models/${unityBreadModels[key] || key}.glb?${CACHE_BUST}`, (gltf) => {
     const model = gltf.scene;
     
     model.traverse((child) => {

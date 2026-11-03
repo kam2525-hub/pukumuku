@@ -1,0 +1,353 @@
+/* ============================================================
+   🥖 パン工房プクムク ミニゲームランド - ポータル専用スタイル
+   ============================================================ */
+:root {
+  --color-bg-base: #FFF9F0;
+  --color-card-bg: #FFFFFF;
+  --color-theme-orange: #E0822A;
+  --color-theme-dark: #5D4037;
+  --color-accent-gold: #F59E0B;
+  --color-accent-green: #10B981;
+  --color-accent-red: #EF4444;
+  --color-text-main: #3E2723;
+  --color-text-sub: #8D6E63;
+  --shadow-card: 0 8px 24px rgba(93, 64, 55, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+body {
+  font-family: 'M PLUS Rounded 1c', 'Hiragino Maru Gothic ProN', sans-serif;
+  background: var(--color-bg-base);
+  color: var(--color-text-main);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 16px 12px 40px;
+}
+
+#portal-container {
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ヘッダー */
+.portal-header {
+  text-align: center;
+  padding: 16px 12px 10px;
+  background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
+  border-radius: 20px;
+  border: 3px solid #FFB74D;
+  box-shadow: var(--shadow-card);
+}
+
+.portal-badge {
+  display: inline-block;
+  background: var(--color-theme-orange);
+  color: #FFF;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  box-shadow: 0 2px 6px rgba(224, 130, 42, 0.3);
+}
+
+.portal-title {
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--color-theme-dark);
+  line-height: 1.3;
+  text-shadow: 1px 1px 0 #FFF;
+}
+
+.portal-title span {
+  color: var(--color-theme-orange);
+}
+
+.portal-subtitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-sub);
+  margin-top: 4px;
+}
+
+/* ゲーム一覧 */
+.games-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.game-card {
+  background: var(--color-card-bg);
+  border-radius: 20px;
+  border: 3px solid #FFE0B2;
+  box-shadow: var(--shadow-card);
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.game-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(93, 64, 55, 0.18);
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 12px;
+  color: #FFF;
+}
+
+.card-badge.popular {
+  background: #E65100;
+}
+
+.card-badge.new {
+  background: #2E7D32;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.05); }
+}
+
+.game-number {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--color-text-sub);
+}
+
+.game-info {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.game-icon-box {
+  width: 68px;
+  height: 68px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+.icon-catch {
+  background: linear-gradient(135deg, #FFE082, #FFB74D);
+  border: 2px solid #FFA000;
+}
+
+.icon-tower {
+  background: linear-gradient(135deg, #FFCCBC, #FF8A65);
+  border: 2px solid #E64A19;
+}
+
+.game-text {
+  flex: 1;
+}
+
+.game-name {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--color-theme-dark);
+  line-height: 1.25;
+}
+
+.game-desc {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-sub);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.game-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  font-size: 11px;
+  font-weight: 800;
+  background: #FFF3E0;
+  color: #D84315;
+  padding: 3px 8px;
+  border-radius: 8px;
+  border: 1px solid #FFE0B2;
+}
+
+/* あそぶボタン */
+.play-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 13px 0;
+  font-size: 16px;
+  font-weight: 900;
+  text-decoration: none;
+  border-radius: 16px;
+  color: #FFF;
+  box-shadow: 0 6px 16px rgba(224, 130, 42, 0.35);
+  transition: transform 0.1s ease, filter 0.1s ease;
+}
+
+.play-btn-orange {
+  background: linear-gradient(180deg, #FF9800, #E65100);
+  border: 2px solid #BF360C;
+}
+
+.play-btn-green {
+  background: linear-gradient(180deg, #4CAF50, #2E7D32);
+  border: 2px solid #1B5E20;
+  box-shadow: 0 6px 16px rgba(46, 125, 50, 0.35);
+}
+
+.play-btn:active {
+  transform: scale(0.97);
+  filter: brightness(0.9);
+}
+
+/* サブメニュー・図鑑ボタン */
+.portal-sub-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.sub-action-btn {
+  flex: 1;
+  background: #FFF;
+  border: 2px solid #FFB74D;
+  border-radius: 14px;
+  padding: 11px 8px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--color-theme-dark);
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.1s;
+}
+
+.sub-action-btn:active {
+  background: #FFF3E0;
+}
+
+/* フッター */
+.portal-footer {
+  text-align: center;
+  padding: 12px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-sub);
+  line-height: 1.5;
+}
+
+.portal-disclaimer {
+  font-size: 10px;
+  margin-bottom: 6px;
+  color: #A1887F;
+}
+
+/* パン図鑑モーダル */
+.overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+}
+
+.overlay.active {
+  display: flex;
+}
+
+.modal-card {
+  background: #FFF;
+  border-radius: 20px;
+  padding: 16px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 16px 36px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+.result-header {
+  font-size: 16px;
+  font-weight: 900;
+  text-align: center;
+  color: var(--color-theme-dark);
+  margin-bottom: 10px;
+}
+
+.catalog-scroll-area {
+  max-height: 60vh;
+  overflow-y: auto;
+  border-radius: 12px;
+  border: 2px solid #E0822A;
+  background: #FFFDF7;
+}
+
+.catalog-img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.catalog-disclaimer {
+  font-size: 10px;
+  font-weight: 800;
+  color: #8D6E63;
+  margin: 6px 0 10px;
+  text-align: right;
+  line-height: 1.3;
+}
+
+.close-btn {
+  background: var(--color-theme-orange);
+  color: #FFF;
+  border: none;
+  border-radius: 12px;
+  padding: 10px;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+}
