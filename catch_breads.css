@@ -1,0 +1,52 @@
+.catch-bread-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 8px;
+  list-style: none;
+  text-align: center;
+}
+
+.catch-bread-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 5px 9px;
+  border: 1px solid #ebc184;
+  border-radius: 12px;
+  background: radial-gradient(ellipse at 50% 34%, #fffdfa 25%, #fff0d4 85%);
+  color: #68351e;
+  line-height: 1.3;
+}
+
+.catch-bread-entry img {
+  display: block;
+  width: min(100%, 112px);
+  height: auto;
+  margin: -5px 0 -12px;
+  filter: drop-shadow(0 4px 4px #733e2230);
+}
+
+.catch-bread-entry strong {
+  font-size: 13px;
+}
+
+.catch-bread-score {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #ffe1a6;
+  color: #864007;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.catch-bread-score.penalty {
+  background: #ffe2d8;
+  color: #a43023;
+}
+
+.catch-bread-entry small {
+  font-size: 11px;
+}

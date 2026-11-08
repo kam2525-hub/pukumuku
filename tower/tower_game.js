@@ -2579,6 +2579,17 @@ function escapeHtmlSafe(str) {
   });
 }
 
+function formatDateDisplay(raw) {
+  if (!raw) return '';
+  try {
+    const d = new Date(raw);
+    if (!isNaN(d.getTime())) {
+      return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    }
+  } catch (e) {}
+  return String(raw).slice(0, 11);
+}
+
 function getLocalTowerRankings() {
   try {
     const raw = localStorage.getItem(LOCAL_TOWER_RANKING_KEY);
@@ -2687,7 +2698,8 @@ async function fetchTowerRankings(mode = 'score', containerId = 'modal-ranking-l
             name: String(r.name || '名無し職人'),
             score: Number(r.score || 0),
             height: Number(r.height || 0),
-            completed: Boolean(r.completed)
+            completed: Boolean(r.completed),
+            date: r.date || ''
           }));
           records.push(...gasMapped);
         }
@@ -2732,39 +2744,41 @@ async function fetchTowerRankings(mode = 'score', containerId = 'modal-ranking-l
 function renderTowerRankingItems(items, mode, containerEl, highlightId) {
   if (!containerEl) return;
   if (!items || items.length === 0) {
-    containerEl.innerHTML = '<div class="ranking-loading">まだ記録がありません。最初の記録を登録しよう！</div>';
+    containerEl.innerHTML = '<div class="ranking-row"><span style="flex:1; text-align:center;">まだ記録がありません</span></div>';
     return;
   }
 
   const currentPlayerName = localStorage.getItem('pukumuku_player_name') || '';
+  const medals = ['🥇', '🥈', '🥉', '4位', '5位', '6位', '7位', '8位', '9位', '10位'];
 
-  containerEl.innerHTML = items.map((item, idx) => {
+  containerEl.innerHTML = items.slice(0, 10).map((item, idx) => {
     const rank = idx + 1;
-    let rankBadge = `${rank}位`;
-    let rowClass = 'ranking-item';
-    if (rank === 1) { rankBadge = '🥇 1位'; rowClass += ' rank-1'; }
-    else if (rank === 2) { rankBadge = '🥈 2位'; rowClass += ' rank-2'; }
-    else if (rank === 3) { rankBadge = '🥉 3位'; rowClass += ' rank-3'; }
+    const rankBadge = medals[idx] || `${rank}位`;
 
     const isMyHighlight = (highlightId && (item.id === highlightId)) ||
                           (highlightId && currentPlayerName && item.name === currentPlayerName);
-    if (isMyHighlight) {
-      rowClass += ' rank-me';
-    }
 
     const safeName = escapeHtmlSafe(item.name || '名無し職人');
     const crown = item.completed ? '👑' : '🥪';
-    const scoreStr = `¥${Number(item.score || 0).toLocaleString()}`;
-    const heightStr = `${Number(item.height || 0).toFixed(1)} cm`;
 
-    const primaryVal = (mode === 'height') ? `📏 ${heightStr}` : `💰 ${scoreStr}`;
-    const subVal = (mode === 'height') ? `(${scoreStr})` : `(高さ ${heightStr})`;
+    // ユーザー要望: 高さ部門と値段部門で分けているため、その項目の数値のみ表示（サブ値は完全非表示）
+    let scoreDisplay = '';
+    if (mode === 'height') {
+      const hVal = Number(item.height || 0).toFixed(1);
+      scoreDisplay = `${hVal} cm`;
+    } else {
+      const sVal = Number(item.score || 0).toLocaleString();
+      scoreDisplay = `¥${sVal}`;
+    }
+
+    const dateStr = formatDateDisplay(item.date);
 
     return `
-      <div class="${rowClass}">
-        <span class="rank-num">${rankBadge}</span>
-        <span class="rank-name">${crown} ${safeName}</span>
-        <span class="rank-val">${primaryVal} <small class="rank-sub-val">${subVal}</small></span>
+      <div class="ranking-row ${isMyHighlight ? 'current-play' : ''}">
+        <span class="ranking-rank">${rankBadge}</span>
+        <span class="ranking-name" title="${safeName}">${crown} ${safeName}</span>
+        <span class="ranking-score">${scoreDisplay}</span>
+        <span class="ranking-date">${escapeHtmlSafe(dateStr)}</span>
       </div>
     `;
   }).join('');

@@ -361,18 +361,6 @@ const GAME_CONFIG = {
   maxTower: 5, // パンタワーの最大数
 };
 
-const BREAD_TYPES = {
-  bread_croissant: { name: "クロワッサン", score: 200, scale: 0.22, towerScale: 0.15, speed: 4.0, prob: 0.13 },
-  bread_melon: { name: "メロンパン", score: 300, scale: 0.26, towerScale: 0.16, speed: 3.8, prob: 0.13 },
-  bread_cream: { name: "クリームパン", score: 250, scale: 0.26, towerScale: 0.16, speed: 3.7, prob: 0.12 },
-  bread_burger: { name: "チーズバーガー", score: 350, scale: 0.26, towerScale: 0.15, speed: 3.9, prob: 0.11 },
-  bread_egg: { name: "たまごパン", score: 280, scale: 0.26, towerScale: 0.16, speed: 3.8, prob: 0.11, power: "fever" },
-  bread_mushroom: { name: "きのこパン", score: 260, scale: 0.26, towerScale: 0.16, speed: 3.7, prob: 0.10, power: "mega_box" },
-  bread_negi: { name: "ねぎパン", score: 240, scale: 0.26, towerScale: 0.16, speed: 3.9, prob: 0.10, power: "speed_up" },
-  bread_cocoa: { name: "ココアパン", score: 270, scale: 0.26, towerScale: 0.16, speed: 3.6, prob: 0.09 },
-  bread_gold: { name: "金のプクムクパン", score: 1000, scale: 0.38, towerScale: 0.24, speed: 4.8, prob: 0.04 },
-  bread_burnt: { name: "コゲパン", score: -100, scale: 0.28, towerScale: 0.18, speed: 4.3, prob: 0.07, power: "burnt" }
-};
 
 let gameState = {
   score: 0,
@@ -707,141 +695,10 @@ function createCloudTexture() {
 }
 
 // 5. メロンパン: 一目でわかる鮮やかメロングリーン（抹茶・メロン色）！
-function createMelonBreadTexture() {
-  const c = document.createElement('canvas');
-  c.width = 256; c.height = 256;
-  const ctx = c.getContext('2d');
-  // 明るく鮮やかなメロングリーンベース
-  ctx.fillStyle = '#65C552';
-  ctx.fillRect(0, 0, 256, 256);
-  // 濃いエメラルドグリーンの格子模様
-  ctx.strokeStyle = '#207817';
-  ctx.lineWidth = 14;
-  for (let i = -256; i < 512; i += 42) {
-    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + 256, 256); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(i, 256); ctx.lineTo(i + 256, 0); ctx.stroke();
-  }
-  return new THREE.CanvasTexture(c);
-}
-
-// 6. チョココロネ: 黄金のパン生地 ＆ 先端の濃厚ビターチョコレート！
-function createCornetTexture() {
-  const c = document.createElement('canvas');
-  c.width = 256; c.height = 256;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#EA9F3E';
-  ctx.fillRect(0, 0, 256, 256);
-  ctx.fillStyle = '#9C5812';
-  for (let x = 0; x < 256; x += 36) {
-    ctx.fillRect(x, 0, 16, 256);
-  }
-  // 先端の濃密ビターチョコ
-  ctx.fillStyle = '#150A05';
-  ctx.beginPath();
-  ctx.arc(128, 128, 65, 0, Math.PI * 2);
-  ctx.fill();
-  // チョコのツヤ
-  ctx.fillStyle = 'rgba(255,255,255,0.25)';
-  ctx.beginPath();
-  ctx.arc(110, 110, 20, 0, Math.PI * 2);
-  ctx.fill();
-  return new THREE.CanvasTexture(c);
-}
-
-// 7. 山型食パン: こんがり濃い焦げ茶の耳 ＆ 純白ふんわり断面！
-function createLoafBreadTexture() {
-  const c = document.createElement('canvas');
-  c.width = 256; c.height = 256;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(0, 0, 256, 256);
-  ctx.lineWidth = 36;
-  ctx.strokeStyle = '#521F03';
-  ctx.strokeRect(18, 18, 220, 220);
-  ctx.fillStyle = '#421601';
-  ctx.fillRect(0, 0, 256, 78);
-  return new THREE.CanvasTexture(c);
-}
-
-// 8. クロワッサン: 深みのある濃い黄金キャラメル色＆パイ層！
-function createCroissantTexture() {
-  const c = document.createElement('canvas');
-  c.width = 256; c.height = 256;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#DC5F0D';
-  ctx.fillRect(0, 0, 256, 256);
-  for (let y = 0; y < 256; y += 20) {
-    ctx.fillStyle = (y % 40 === 0) ? '#FFAB40' : '#722403';
-    ctx.fillRect(0, y, 256, 11);
-  }
-  return new THREE.CanvasTexture(c);
-}
-
-// 9. フランスパン（バゲット）: 香ばしい小麦色 ＆ クッキリ斜めクープ！
-function createBaguetteTexture() {
-  const c = document.createElement('canvas');
-  c.width = 256; c.height = 256;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#DE8A27';
-  ctx.fillRect(0, 0, 256, 256);
-  ctx.fillStyle = '#FFF5D6';
-  ctx.strokeStyle = '#783504';
-  ctx.lineWidth = 7;
-  for (let y = 30; y < 256; y += 55) {
-    ctx.beginPath();
-    ctx.ellipse(128, y, 75, 18, Math.PI / 6, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-  }
-  return new THREE.CanvasTexture(c);
-}
-
-// 10. 桜あんぱん: 艶やかな赤褐色 ＆ 黒ごま！
-function createAnpanTexture() {
-  const c = document.createElement('canvas');
-  c.width = 256; c.height = 256;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#B44717';
-  ctx.fillRect(0, 0, 256, 256);
-  ctx.fillStyle = '#111111';
-  for (let i = 0; i < 35; i++) {
-    const rx = 128 + (Math.random() - 0.5) * 48;
-    const ry = 128 + (Math.random() - 0.5) * 48;
-    ctx.fillRect(rx, ry, 6, 6);
-  }
-  return new THREE.CanvasTexture(c);
-}
-
-// 11. コゲパン: 炭化した漆黒 ＆ 赤い焦げひび割れ！
-function createBurntTexture() {
-  const c = document.createElement('canvas');
-  c.width = 256; c.height = 256;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#0F0C0B';
-  ctx.fillRect(0, 0, 256, 256);
-  ctx.strokeStyle = '#5E1005';
-  ctx.lineWidth = 5;
-  for (let i = 0; i < 9; i++) {
-    ctx.beginPath();
-    ctx.moveTo(Math.random() * 256, Math.random() * 256);
-    ctx.lineTo(Math.random() * 256, Math.random() * 256);
-    ctx.stroke();
-  }
-  return new THREE.CanvasTexture(c);
-}
-
 const shopWallTex = createShopWallTexture();
 const woodTex = createWoodTexture();
 const signTex = createSignboardTexture();
 const sunFaceTex = createSunFaceTexture();
-const melonTex = createMelonBreadTexture();
-const croissantTex = createCroissantTexture();
-const loafTex = createLoafBreadTexture();
-const cornetTex = createCornetTexture();
-const baguetteTex = createBaguetteTexture();
-const anpanTex = createAnpanTexture();
-const burntTex = createBurntTexture();
-
 const moonTex = createMoonTexture();
 const cloudTex = createCloudTexture();
 
@@ -933,48 +790,16 @@ loader.load(`../models/jun_kun_carry_box.glb?${CACHE_BUST}`, (gltf) => {
   }
 }, undefined, (err) => console.error("Error loading Jun-kun:", err));
 
-// Unityで使用していたBlender製パンを取り込み、各パンに最適なマテリアル・テクスチャを適用！
-const unityBreadModels = {
-  bread_melon: 'bread_melon_unity',
-  bread_croissant: 'bread_croissant_unity',
-  bread_cream: 'bread_cream_unity',
-  bread_burger: 'bread_burger_unity',
-  bread_egg: 'bread_egg_unity',
-  bread_mushroom: 'bread_mushroom_unity',
-  bread_negi: 'bread_negi_unity',
-  bread_cocoa: 'bread_cocoa_unity',
-  bread_burnt: 'bread_burnt_unity'
-};
+// Blenderで作った焼き色と具材のマテリアルをそのまま使用する。
 Object.keys(BREAD_TYPES).forEach((key) => {
-  loader.load(`../models/${unityBreadModels[key] || key}.glb?${CACHE_BUST}`, (gltf) => {
+  loader.load(catchBreadAsset(key, 'glb'), (gltf) => {
     const model = gltf.scene;
-    
     model.traverse((child) => {
       if (child.isMesh) {
         child.castShadow = true;
         child.receiveShadow = true;
-        // Blender製パン（クリームパン・バーガー・たまご・きのこ・ねぎ・ココア・新コゲパン）は精巧な多色マテリアルを保持
-        if (key === 'bread_cream' || key === 'bread_burger' || key === 'bread_egg' || 
-            key === 'bread_mushroom' || key === 'bread_negi' || key === 'bread_cocoa' || key === 'bread_burnt') {
-          return;
-        }
-
-        if (key === 'bread_melon') {
-          child.material = new THREE.MeshStandardMaterial({ map: melonTex, roughness: 0.5 });
-        } else if (key === 'bread_croissant') {
-          child.material = new THREE.MeshStandardMaterial({ map: croissantTex, roughness: 0.45 });
-        } else if (key === 'bread_gold') {
-          child.material = new THREE.MeshStandardMaterial({
-            color: 0xFFD700,
-            metalness: 0.25,
-            roughness: 0.3,
-            emissive: 0xB58900,
-            emissiveIntensity: 0.45
-          });
-        }
       }
     });
-
     breadTemplates[key] = model;
   });
 });
@@ -1094,6 +919,7 @@ function spawnBread() {
 
   const scale = def.scale;
   breadMesh.scale.set(scale, scale, scale);
+  breadMesh.rotation.x = 0.55; // 落下し始めから焼き目や具材が見える角度
 
   // 画面上部の完全一定ライン（Y = 4.0）から綺麗にスポーン！
   const spawnHeight = 4.0;
@@ -1374,12 +1200,12 @@ function animate() {
           const gainedScore = b.def.score * scoreMul;
 
           if (b.type === 'bread_burnt') {
-            // お邪魔コゲ食パン：-100点、コンボリセット、フィーバー解除
+            // お邪魔コゲパン：-100点、コンボリセット、フィーバー解除
             sounds.playBurnt();
             sounds.setFever(false);
             gameState.score = Math.max(0, gameState.score - 100);
             updateScoreUI();
-            showScorePopup(screenX - 45, screenY, "⚠️ コゲ食パン! -¥100", "#D50000");
+            showScorePopup(screenX - 45, screenY, "⚠️ コゲパン! -¥100", "#D50000");
             gameState.combo = 0;
             gameState.isFever = false;
           } else if (b.type === 'bread_egg') {

@@ -17,6 +17,7 @@
   <!-- Three.js & GLTFLoader -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <link rel="stylesheet" href="../catch_breads.css?v=20261108bakery">
 </head>
 
 <body>
@@ -61,7 +62,7 @@
         <div class="instruction">
           <div class="icon-touch">👉 📱</div>
           <p>画面を<strong>ゆびで左右になぞるだけ</strong>！<br><small>(パソコンはマウスか ◀ ▶ キー)</small></p>
-          <p><small>🍳 たまご(2倍)・🍄 きのこ(巨大化)・🧅 ねぎ(快速)！<br>✨ 金のパンは高得点！ ⚠️ コゲ食パンは避けよう</small></p>
+          <p><small>🍳 たまご(2倍)・🍄 きのこ(巨大化)・🧅 ねぎ(快速)！<br>✨ 金のパンは高得点！ ⚠️ コゲパンは避けよう</small></p>
         </div>
         <div class="start-btn-group">
           <button id="start-btn" class="main-btn">ゲームスタート！</button>
@@ -79,9 +80,9 @@
       <div class="modal-card catalog-card">
         <div class="result-header">📖 プクムク焼きたてパン図鑑</div>
         <div class="catalog-scroll-area">
-          <img src="../bread_catalog.png?v=20261103_v2" class="catalog-img" alt="パン図鑑カタログ">
+          <ul class="catch-bread-grid" aria-label="パンキャッチのパン一覧"></ul>
         </div>
-        <div class="catalog-disclaimer">※ゲーム内の価格・見た目はイメージであり、実店舗の実際の商品・価格とは異なります。</div>
+        <div class="catalog-disclaimer">※ゲーム内の得点・見た目はイメージであり、実店舗の実際の商品・価格とは異なります。</div>
         <button id="close-catalog-btn" class="main-btn">閉じる</button>
       </div>
     </div>
@@ -142,7 +143,8 @@
     </div>
   </div>
 
-  <script src="game.js?v=20261108gasv3"></script>
+  <script src="../catch_breads.js?v=20261108bakery"></script>
+  <script src="game.js?v=20261108bakery"></script>
 </body>
 
 </html>

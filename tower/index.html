@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>ぐらぐら！サンドイッチタワー - パン工房プクムク</title>
-  <link rel="stylesheet" href="style.css?v=20261108glb">
+  <link rel="stylesheet" href="style.css?v=20261108v4">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800;900&display=swap" rel="stylesheet">
@@ -160,15 +160,16 @@
 
     <!-- 🏆 世界ランキングモーダル（スタート画面用：高さ部門 / 純利益部門 タブ切替） -->
     <div id="ranking-modal" class="overlay">
-      <div class="modal-card scrollable-modal">
-        <div class="modal-badge">🌍 WORLD LEADERBOARD</div>
-        <h2 class="modal-title">世界ランキング TOP 10</h2>
+      <div class="modal-card">
+        <div class="result-header">🏆 世界ランキング TOP 10</div>
         <div class="ranking-tabs">
           <button id="modal-tab-score" class="rank-tab-btn active">💰 純利益（値段）部門</button>
           <button id="modal-tab-height" class="rank-tab-btn">📏 高さ（cm）部門</button>
         </div>
-        <div id="modal-ranking-list" class="ranking-list">
-          <!-- JSでリアルタイム生成 -->
+        <div class="ranking-section modal-ranking-section">
+          <div id="modal-ranking-list" class="ranking-list">
+            <!-- JSでリアルタイム生成 -->
+          </div>
         </div>
         <button id="close-ranking-btn" class="main-btn">閉じる</button>
       </div>
@@ -246,7 +247,7 @@
     </div>
   </div>
 
-  <script src="tower_game.js?v=20261108gasv3"></script>
+  <script src="tower_game.js?v=20261108v4"></script>
 </body>
 
 </html>

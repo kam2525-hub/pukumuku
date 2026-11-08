@@ -1,3 +1,9 @@
+.result-header {
+  font-size: 18px;
+  font-weight: 900;
+  color: #E65100;
+  margin-bottom: 4px;
+}
 /* ============================================================
    🍔 ぐらぐら！サンドイッチタワー - 専用スタイル
    ============================================================ */
@@ -791,15 +797,26 @@ html, body {
   min-height: 15px;
 }
 
+/* 🏆 歴代ランキングスタイル（パンキャッチ完全統一） */
 .ranking-section {
+  background: #FFF8E7;
+  border: 2px dashed #E0822A;
+  border-radius: 14px;
+  padding: 8px 10px;
+  text-align: left;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
+.modal-ranking-section {
+  padding: 8px 10px;
+}
+
 .ranking-tabs {
   display: flex;
   gap: 6px;
+  margin-bottom: 2px;
 }
 
 .rank-tab-btn {
@@ -812,74 +829,88 @@ html, body {
   font-weight: 900;
   color: #8D6E63;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .rank-tab-btn.active {
   background: #E65100;
   border-color: #BF360C;
   color: #FFF;
+  box-shadow: 0 2px 6px rgba(230, 81, 0, 0.25);
 }
 
 .ranking-list {
-  background: #FFF;
-  border: 2px solid #FFE082;
-  border-radius: 12px;
-  padding: 4px 6px;
-  max-height: 165px;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
+  max-height: 280px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.modal-ranking-section .ranking-list {
+  max-height: none;
+  overflow-y: visible;
 }
 
 .ranking-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 4px 6px;
-  border-bottom: 1px dashed #FFE0B2;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
-}
-
-.ranking-row:last-child {
-  border-bottom: none;
+  color: #5D2E0B;
+  padding: 3px 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.85);
+  box-sizing: border-box;
 }
 
 .ranking-row.current-play {
-  background: #FFF9C4;
-  border-radius: 8px;
-  border: 1.5px solid #FBC02D;
+  background: #FFE082;
+  color: #D84315;
+  font-weight: 900;
+  animation: pulseRank 1s infinite alternate;
+  border: 1px solid #FFB300;
+}
+
+@keyframes pulseRank {
+  from { transform: scale(1); }
+  to { transform: scale(1.015); }
 }
 
 .ranking-rank {
-  width: 34px;
-  text-align: left;
-  color: #D84315;
+  width: 32px;
+  white-space: nowrap;
   font-weight: 900;
+  text-align: center;
+  flex-shrink: 0;
+  color: #5D2E0B;
 }
 
 .ranking-name {
   flex: 1;
-  text-align: left;
+  min-width: 0;
+  padding: 0 4px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #3E2723;
+  color: #4E342E;
 }
 
-.ranking-metric {
-  font-weight: 900;
+.ranking-score {
   color: #E65100;
-  margin-left: 6px;
+  font-weight: 900;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: 4px;
 }
 
-.ranking-sub {
-  font-size: 9px;
-  color: #8D6E63;
+.ranking-date {
+  font-size: 10px;
+  color: #9E7D63;
   margin-left: 6px;
-  min-width: 48px;
-  text-align: right;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* 📘 説明書スタイル */
