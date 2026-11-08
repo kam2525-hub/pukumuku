@@ -16,8 +16,52 @@ const BREAD_TYPES = {
   bread_burnt: { name: "コゲパン", score: -100, scale: 0.28, towerScale: 0.18, speed: 4.3, prob: 0.07, power: "burnt" }
 };
 
+// 添付の手描きメニューを参考に造形したオリジナルモデル。ゲーム内得点は実際の価格ではない。
+const MENU_BREADS = [
+  ['bread_shokupan', '食ぱん'],
+  ['bread_raisin_shokupan', 'レーズン食ぱん'],
+  ['bread_petit_roll', 'プチロール'],
+  ['bread_petit_an', 'プチあん'],
+  ['bread_petit_cheese', 'プチチーズ'],
+  ['bread_wiener_croissant', 'ウインナークロワッサン'],
+  ['bread_tomato', 'トマトぱん'],
+  ['bread_curry', 'カレーパン'],
+  ['bread_cheese_corn', 'チーズコーンマヨ'],
+  ['bread_corn_mayo', 'コーンマヨネーズ'],
+  ['bread_egg_salad', 'たまごサラダ'],
+  ['bread_yakisoba', 'やきそばぱん'],
+  ['bread_gratin', 'グラタン'],
+  ['bread_choco_danish', 'チョコデニッシュ'],
+  ['bread_apple_danish', 'りんごデニッシュ'],
+  ['bread_sweet_potato_montblanc', 'さつまいもモンブラン'],
+  ['bread_bacon_egg_pie', 'ベーコンエッグパイ'],
+  ['bread_mexican', 'メキシカンぱん'],
+  ['bread_cinnamon_apple', 'シナモンアップル'],
+  ['bread_pumpkin_bun', 'かぼちゃぱん'],
+  ['bread_koshian', 'こしあんぱん'],
+  ['bread_shrimp_avocado', 'えびアボカドのグラタン'],
+  ['bread_tuna', 'ツナぱん'],
+  ['bread_broccoli_pizza', 'ブロッコリーピザ'],
+  ['bread_fish_burger', 'さばかつバーガー'],
+  ['bread_ginger_burger', 'しょうがバーガー'],
+  ['bread_teriyaki_burger', 'てりやきバーガー'],
+  ['bread_cheese_burger', 'チーズバーガー'],
+  ['bread_choco_cream', 'チョコクリーム'],
+  ['bread_lemon', 'レモンぱん'],
+  ['bread_fruit_cheese', 'フルーツチーズ'],
+  ['bread_nandai_raisin', '南台レーズンサンド'],
+  ['bread_raisin_caramel_danish', 'レーズンキャラメルデニッシュ'],
+  ['bread_salt_anko', '塩あんぱん'],
+  ['bread_frog_matcha', 'カエルまっちゃビスケット'],
+  ['bread_panda_choco', 'パンダチョコビスケット']
+];
+for (const [key, name] of MENU_BREADS) {
+  BREAD_TYPES[key] = { name, score: 220 + (Object.keys(BREAD_TYPES).length % 7) * 20,
+    scale: 0.27, towerScale: 0.16, speed: 3.8, prob: 0.042 };
+}
+
 const CATCH_BREAD_ASSET_ROOT = new URL('models/catch_breads/', document.currentScript.src);
-const CATCH_BREAD_ASSET_VERSION = '20261109menu';
+const CATCH_BREAD_ASSET_VERSION = '20261109allmenu';
 
 function catchBreadAsset(key, extension) {
   return new URL(`${key}.${extension}?v=${CATCH_BREAD_ASSET_VERSION}`, CATCH_BREAD_ASSET_ROOT).href;
@@ -31,6 +75,8 @@ const breadPowerNotes = {
 };
 
 for (const catalog of document.querySelectorAll('.catch-bread-grid')) {
+  const search = catalog.closest('.modal-card')?.querySelector('.catch-bread-search');
+  const cards = [];
   for (const [key, bread] of Object.entries(BREAD_TYPES)) {
     const card = document.createElement('li');
     card.className = 'catch-bread-entry';
@@ -54,5 +100,10 @@ for (const catalog of document.querySelectorAll('.catch-bread-grid')) {
       card.append(note);
     }
     catalog.append(card);
+    cards.push([card, bread.name]);
   }
+  search?.addEventListener('input', () => {
+    const query = search.value.trim().toLocaleLowerCase('ja-JP');
+    for (const [card, name] of cards) card.hidden = !name.toLocaleLowerCase('ja-JP').includes(query);
+  });
 }

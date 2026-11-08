@@ -901,11 +901,8 @@ function chooseBreadType() {
     if (Math.random() < 0.35) {
       return 'bread_gold';
     }
-    const feverBreads = [
-      'bread_burger', 'bread_egg', 'bread_croissant', 'bread_melon',
-      'bread_cream', 'bread_mushroom', 'bread_negi', 'bread_cocoa',
-      'bread_cream_melon', 'bread_potato', 'bread_chocolate', 'bread_pumpkin', 'bread_sweet_potato'
-    ];
+    const feverBreads = Object.keys(BREAD_TYPES).filter(key =>
+      key !== 'bread_gold' && key !== 'bread_burnt');
     return feverBreads[Math.floor(Math.random() * feverBreads.length)];
   }
   const totalWeight = Object.values(BREAD_TYPES).reduce((sum, bread) => sum + bread.prob, 0);
@@ -1443,19 +1440,14 @@ function endGame() {
   }
   rankBadge.innerText = rank;
 
-  // パン内訳の表示（全10種対応）
-  breadStats.innerHTML = `
-    <div>🥐 クロワッサン: ${gameState.breadCount.bread_croissant || 0}個</div>
-    <div>🍈 メロンパン: ${gameState.breadCount.bread_melon || 0}個</div>
-    <div>🥯 クリームパン: ${gameState.breadCount.bread_cream || 0}個</div>
-    <div>🍔 バーガー: ${gameState.breadCount.bread_burger || 0}個</div>
-    <div>🍳 たまごパン: ${gameState.breadCount.bread_egg || 0}個</div>
-    <div>🍄 きのこパン: ${gameState.breadCount.bread_mushroom || 0}個</div>
-    <div>🧅 ねぎパン: ${gameState.breadCount.bread_negi || 0}個</div>
-    <div>🍫 ココアパン: ${gameState.breadCount.bread_cocoa || 0}個</div>
-    <div>✨ 金パン: ${gameState.breadCount.bread_gold || 0}個</div>
-    <div>⚠️ コゲパン: ${gameState.breadCount.bread_burnt || 0}個</div>
-  `;
+  // 追加したパンも今回キャッチした分だけ一覧にする。
+  breadStats.replaceChildren();
+  for (const [key, count] of Object.entries(gameState.breadCount)) {
+    if (!count) continue;
+    const row = document.createElement('div');
+    row.textContent = `${BREAD_TYPES[key].name}: ${count}個`;
+    breadStats.append(row);
+  }
 
   // 終了演出: 純くん自身は中央（X = 0）に向かって軽快に歩いていく！
   gameState.targetX = 0;
