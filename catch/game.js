@@ -808,7 +808,8 @@ Object.keys(BREAD_TYPES).forEach((key) => {
     model.traverse((child) => {
       if (child.isMesh) {
         child.castShadow = true;
-        child.receiveShadow = true;
+        // 店のひさしの影でパンの色が灰色に沈まないようにする。
+        child.receiveShadow = false;
       }
     });
     breadTemplates[key] = model;

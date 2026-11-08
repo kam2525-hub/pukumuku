@@ -15,6 +15,8 @@ from mathutils import Vector
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / 'models' / 'catch_breads'
 OUT.mkdir(parents=True, exist_ok=True)
+TEXTURES = ROOT / 'models' / 'textures' / 'catch_menu'
+TEXTURES.mkdir(parents=True, exist_ok=True)
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.object.delete(use_global=False)
 
@@ -28,6 +30,23 @@ def mat(name, rgb, rough=.58):
     m.node_tree.links.new(bs.outputs['BSDF'], output.inputs['Surface'])
     bs.inputs['Base Color'].default_value = (*rgb, 1)
     bs.inputs['Roughness'].default_value = rough
+    index = len(bpy.data.images)
+    image = bpy.data.images.new(f'{name}の色むら', width=64, height=64, alpha=True)
+    rng = random.Random(8200 + index)
+    pixels = []
+    for y in range(64):
+        for x in range(64):
+            grain = .94 + .045 * math.sin(x * .37 + y * .21) + .035 * math.sin(x * .83 - y * .46)
+            grain += rng.uniform(-.035, .035)
+            pixels.extend((*[max(0, min(1, c * grain)) for c in rgb], 1))
+    image.pixels.foreach_set(pixels)
+    image.filepath_raw = str(TEXTURES / f'material_{index:02d}.png')
+    image.file_format = 'PNG'
+    image.save()
+    image.pack()
+    texture = m.node_tree.nodes.new('ShaderNodeTexImage')
+    texture.image = image
+    m.node_tree.links.new(texture.outputs['Color'], bs.inputs['Base Color'])
     return m
 
 M = {

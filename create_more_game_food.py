@@ -8,6 +8,8 @@ from mathutils import Vector
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / 'models' / 'catch_breads'
 OUT.mkdir(parents=True, exist_ok=True)
+TEXTURES = ROOT / 'models' / 'textures' / 'more_food'
+TEXTURES.mkdir(parents=True, exist_ok=True)
 RNG = random.Random(6291)
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.object.delete(use_global=False)
@@ -22,6 +24,23 @@ def material(name, color, roughness=.55):
     m.node_tree.links.new(bs.outputs['BSDF'], output.inputs['Surface'])
     bs.inputs['Base Color'].default_value = (*color, 1)
     bs.inputs['Roughness'].default_value = roughness
+    index = len(bpy.data.images)
+    image = bpy.data.images.new(f'{name}の色むら', width=64, height=64, alpha=True)
+    rng = random.Random(9300 + index)
+    pixels = []
+    for y in range(64):
+        for x in range(64):
+            grain = .94 + .045 * math.sin(x * .37 + y * .21) + .035 * math.sin(x * .83 - y * .46)
+            grain += rng.uniform(-.035, .035)
+            pixels.extend((*[max(0, min(1, c * grain)) for c in color], 1))
+    image.pixels.foreach_set(pixels)
+    image.filepath_raw = str(TEXTURES / f'material_{index:02d}.png')
+    image.file_format = 'PNG'
+    image.save()
+    image.pack()
+    texture = m.node_tree.nodes.new('ShaderNodeTexImage')
+    texture.image = image
+    m.node_tree.links.new(texture.outputs['Color'], bs.inputs['Base Color'])
     return m
 
 crust = material('きつね色の焼き皮', (.77,.37,.12))

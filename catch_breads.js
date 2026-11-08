@@ -84,7 +84,7 @@ for (const [power, keys] of Object.entries(BREAD_POWER_GROUPS)) {
 }
 
 const CATCH_BREAD_ASSET_ROOT = new URL('models/catch_breads/', document.currentScript.src);
-const CATCH_BREAD_ASSET_VERSION = '20261109materials';
+const CATCH_BREAD_ASSET_VERSION = '20261109texture';
 
 function catchBreadAsset(key, extension) {
   return new URL(`${key}.${extension}?v=${CATCH_BREAD_ASSET_VERSION}`, CATCH_BREAD_ASSET_ROOT).href;
