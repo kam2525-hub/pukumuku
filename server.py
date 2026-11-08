@@ -26,6 +26,7 @@ if sys.platform == 'win32':
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8766
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_FILE = os.path.join(BASE_DIR, 'ranking_data.json')
+TOWER_DATA_FILE = os.path.join(BASE_DIR, 'tower_ranking_data.json')
 lock = threading.RLock()
 
 # 初期のプクムク常連さんランキング（にぎやかしデータ）
@@ -39,6 +40,69 @@ DEFAULT_RANKINGS = [
     {"id": "puku_init_7", "name": "見習いコッペ", "score": 8800, "date": "11/03 15:10"},
     {"id": "puku_init_8", "name": "プクムク常連A", "score": 6700, "date": "11/03 16:00"},
 ]
+
+# サンドイッチタワー世界ランキング初期データ（高さ cm & 純利益 ¥ 両対応）
+DEFAULT_TOWER_RANKINGS = [
+    {"id": "tw_init_1", "name": "伝説のバーガー職人", "score": 38400, "height": 42.5, "date": "11/08 10:15"},
+    {"id": "tw_init_2", "name": "プクムク店長", "score": 29600, "height": 34.2, "date": "11/08 10:30"},
+    {"id": "tw_init_3", "name": "チーズ大好き純", "score": 22400, "height": 28.6, "date": "11/08 10:45"},
+    {"id": "tw_init_4", "name": "BLTマスター", "score": 18500, "height": 24.0, "date": "11/08 11:00"},
+    {"id": "tw_init_5", "name": "月見バーガー姫", "score": 14200, "height": 19.5, "date": "11/08 11:10"},
+    {"id": "tw_init_6", "name": "金のパティハンター", "score": 11800, "height": 16.2, "date": "11/08 11:20"},
+    {"id": "tw_init_7", "name": "見習いサンドマン", "score": 8400, "height": 12.4, "date": "11/08 11:25"},
+    {"id": "tw_init_8", "name": "はらぺこキッズ", "score": 5200, "height": 8.5, "date": "11/08 11:30"},
+]
+
+def load_tower_rankings():
+    with lock:
+        if not os.path.exists(TOWER_DATA_FILE):
+            with open(TOWER_DATA_FILE, 'w', encoding='utf-8') as f:
+                json.dump(DEFAULT_TOWER_RANKINGS, f, ensure_ascii=False, indent=2)
+            return list(DEFAULT_TOWER_RANKINGS)
+        try:
+            with open(TOWER_DATA_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    return data
+                return list(DEFAULT_TOWER_RANKINGS)
+        except Exception:
+            return list(DEFAULT_TOWER_RANKINGS)
+
+def save_tower_score(name, score, height):
+    with lock:
+        rankings = load_tower_rankings()
+        now = datetime.now()
+        date_str = now.strftime("%m/%d %H:%M")
+        clean_name = html.escape(name.strip()) or "名無しバーガー職人"
+        clean_name = clean_name[:10]
+
+        entry_id = f"tw_{int(now.timestamp() * 1000)}"
+        new_entry = {
+            "id": entry_id,
+            "name": clean_name,
+            "score": int(score),
+            "height": round(float(height), 1),
+            "date": date_str
+        }
+        rankings.append(new_entry)
+        # Keep up to 60 entries
+        rankings = rankings[-60:]
+        with open(TOWER_DATA_FILE, 'w', encoding='utf-8') as f:
+            json.dump(rankings, f, ensure_ascii=False, indent=2)
+
+        by_score = sorted(rankings, key=lambda x: (x.get('score', 0), x.get('height', 0)), reverse=True)
+        by_height = sorted(rankings, key=lambda x: (x.get('height', 0), x.get('score', 0)), reverse=True)
+
+        score_pos = next((i + 1 for i, r in enumerate(by_score) if r.get('id') == entry_id), None)
+        height_pos = next((i + 1 for i, r in enumerate(by_height) if r.get('id') == entry_id), None)
+
+        return {
+            "scoreRankings": by_score[:10],
+            "heightRankings": by_height[:10],
+            "currentEntry": new_entry,
+            "scoreRankPosition": score_pos,
+            "heightRankPosition": height_pos
+        }
 
 def load_rankings():
     with lock:
@@ -114,6 +178,23 @@ class BakeryRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
+        if self.path.startswith('/api/tower_ranking'):
+            rankings = load_tower_rankings()
+            by_score = sorted(rankings, key=lambda x: (x.get('score', 0), x.get('height', 0)), reverse=True)[:10]
+            by_height = sorted(rankings, key=lambda x: (x.get('height', 0), x.get('score', 0)), reverse=True)[:10]
+            payload = json.dumps({
+                "status": "ok",
+                "scoreRankings": by_score,
+                "heightRankings": by_height
+            }, ensure_ascii=False).encode('utf-8')
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.send_header('Content-Length', str(len(payload)))
+            self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            self.end_headers()
+            self.wfile.write(payload)
+            return
+
         if self.path.startswith('/api/ranking'):
             rankings = load_rankings()
             rankings.sort(key=lambda x: x.get('score', 0), reverse=True)
@@ -131,6 +212,46 @@ class BakeryRequestHandler(http.server.SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_POST(self):
+        if self.path.startswith('/api/tower_ranking'):
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 10240:
+                self.send_response(413)
+                self.end_headers()
+                return
+            body = self.rfile.read(content_length)
+            try:
+                data = json.loads(body.decode('utf-8'))
+            except Exception:
+                self.send_response(400)
+                self.end_headers()
+                return
+
+            name = str(data.get('name', '名無しバーガー職人'))
+            try:
+                score = int(data.get('score', 0))
+            except (ValueError, TypeError):
+                score = 0
+            try:
+                height = float(data.get('height', 0.0))
+            except (ValueError, TypeError):
+                height = 0.0
+
+            score = max(0, min(500000, score))
+            height = max(0.0, min(500.0, height))
+
+            result = save_tower_score(name, score, height)
+            payload = json.dumps({
+                "status": "ok",
+                **result
+            }, ensure_ascii=False).encode('utf-8')
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.send_header('Content-Length', str(len(payload)))
+            self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            self.end_headers()
+            self.wfile.write(payload)
+            return
+
         if self.path.startswith('/api/ranking'):
             content_length = int(self.headers.get('Content-Length', 0))
             if content_length > 10240: # 10KB上限（DoS対策）

@@ -117,3 +117,5 @@ s05_*.png
 verify_*.png
 final_*.png
 __pycache__/
+tower_*.png
+scratch/

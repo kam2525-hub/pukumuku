@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>ぐらぐら！サンドイッチタワー - パン工房プクムク</title>
-  <link rel="stylesheet" href="style.css?v=tower20261103b">
+  <link rel="stylesheet" href="style.css?v=20261108glb">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800;900&display=swap" rel="stylesheet">
@@ -24,35 +24,55 @@
     <!-- 3Dキャンバス -->
     <canvas id="webgl-canvas"></canvas>
 
-    <!-- ヘッダーUI（ステータス表示） -->
+    <!-- ヘッダーUI（ステータス表示：高さ・純利益・つぎの具材・ライフ） -->
     <div id="header-ui">
-      <!-- 到達高さ -->
+      <!-- 一番上の具材の高さ -->
       <div class="stat-card">
         <span class="stat-label">現在の高さ</span>
         <div class="stat-value"><span id="height-val">0.0</span><span class="stat-unit">cm</span></div>
       </div>
 
-      <!-- 積んだ具材数 -->
+      <!-- 現在の獲得純利益（値段） -->
       <div class="stat-card">
-        <span class="stat-label">具材の数</span>
-        <div class="stat-value"><span id="count-val">0</span><span class="stat-unit">段</span></div>
+        <span class="stat-label">現在の純利益</span>
+        <div class="stat-value"><span class="stat-unit">¥</span><span id="score-val">0</span></div>
+      </div>
+
+      <!-- NEXT具材 -->
+      <div class="stat-card next-card">
+        <span class="stat-label">つぎの具材</span>
+        <div id="next-item-name" class="next-item-name">🥩 パティ</div>
       </div>
 
       <!-- ライフ（3アウト制） -->
       <div class="stat-card lives-card">
-        <span class="stat-label">ライフ（落下3回で終了）</span>
+        <span class="stat-label">ライフ (残機)</span>
         <div id="lives-container" class="lives-container">❤️❤️❤️</div>
       </div>
     </div>
 
-    <!-- トップサブアクション（戻る・サウンド） -->
+    <!-- トップサブアクション（戻る・ベスト記録・具材図鑑・サウンド） -->
     <div class="top-actions">
-      <a href="../" class="hud-btn">🏠 ゲーム選択</a>
-      <button id="sound-btn" class="hud-btn">🔊 サウンド</button>
+      <a href="../" class="hud-btn">🏠 選択</a>
+      <div id="hud-best-badge" class="hud-best-badge">🏆 BEST: <span id="hud-best-height">0.0</span>cm</div>
+      <button id="hud-catalog-btn" class="hud-btn">🍔 図鑑</button>
+      <button id="sound-btn" class="hud-btn">🔊 音</button>
     </div>
 
+    <!-- コンボ＆レシピ完成ポップアップ演出 -->
+    <div id="combo-popup" class="combo-popup"></div>
+    <div id="recipe-popup" class="recipe-popup"></div>
+
     <!-- 操作ガイド -->
-    <div id="tap-guide">👇 画面タップで具材を落とそう！</div>
+    <div id="tap-guide">左右に揺れるトングを狙って、タップで落とそう！</div>
+
+    <!-- 下部操作コントロール（具材を落とすボタン ＆ 上バンズで完成2倍ボタン） -->
+    <div id="bottom-controls" class="bottom-controls">
+      <div class="action-buttons-row">
+        <button id="drop-btn" class="drop-action-btn">🍔 具材を落とす！</button>
+        <button id="finish-bun-btn" class="finish-bun-btn" disabled title="具材を1個以上積むと上バンズで完成（スコア2倍）できます">👑 完成させる！(×2)</button>
+      </div>
+    </div>
 
     <!-- トースト通知 -->
     <div id="toast-msg"></div>
@@ -62,49 +82,171 @@
       <div class="modal-card">
         <div class="modal-badge">🥖 パン工房プクムク 新作ゲーム</div>
         <h1 class="modal-title">ぐらぐら！<br>サンドイッチタワー 🍔</h1>
-        <p class="modal-desc">ゆれるトングから具材を落として、崩さないように高く積み上げよう！</p>
-        
+        <p class="modal-desc">一番上の具材の「高さ(cm)」と「純利益(¥)」で世界ランキングに挑戦しよう！</p>
+
         <div class="instruction-box">
-          <p>👉 <strong>画面をタップ</strong>するだけで具材がポトッ！</p>
-          <p>⚠️ お皿から<strong>具材が3個落ちたら</strong>営業終了！</p>
-          <p>🏆 どこまで高く積み上げられるか限界に挑戦だ！</p>
+          <p>🎯 <strong>左右に揺れるトング</strong>からタップで具材を投下！</p>
+          <p>📏 高さは<strong>「一番上にある具材の上面」</strong>でリアルタイム計測！</p>
+          <p>👑 <strong>「完成させる！」で上バンズが乗ると純利益スコアが2倍！！</strong></p>
+          <p>🌍 <strong>高さ部門 ＆ 純利益（値段）部門</strong>のW世界ランキング搭載！</p>
+        </div>
+
+        <div class="modal-best-box">
+          🏆 自己ベスト: <span id="start-best-val">0.0 cm / ¥0</span>
         </div>
 
         <button id="start-btn" class="main-btn">ゲームスタート！</button>
+        <div class="sub-btn-grid">
+          <button id="open-ranking-btn" class="sub-btn">🏆 世界ランキング</button>
+          <button id="open-catalog-btn" class="sub-btn">🍔 具材図鑑</button>
+          <button id="open-manual-btn" class="sub-btn">📘 遊び方説明書</button>
+        </div>
         <a href="../" class="sub-btn">🏠 ゲーム選択へもどる</a>
+      </div>
+    </div>
+
+    <!-- 📘 遊び方説明書モーダル -->
+    <div id="manual-modal" class="overlay">
+      <div class="modal-card scrollable-modal">
+        <div class="modal-badge">📘 HOW TO PLAY</div>
+        <h2 class="modal-title">サンドイッチタワー説明書</h2>
+        <div class="manual-content">
+          <div class="manual-section">
+            <h3>1. 基本ルールと操作方法</h3>
+            <p>・トングが左右にスイングしています。<strong>「🍔 具材を落とす！」ボタン</strong>、<strong>画面タップ</strong>、またはPCの<strong>スペースキー</strong>で真下に具材を落とします。<br>
+            ・落とした具材が下の具材やお皿に触れて落ち着くまで次の具材は出ません。じっくり狙って落としましょう。<br>
+            ・お皿やテーブルから具材が下に落ちると<strong>ライフ（❤️）が1つ減り</strong>、3回落ちると営業終了です。</p>
+          </div>
+          <div class="manual-section">
+            <h3>2. 高さの測り方（一番上の具材基準）</h3>
+            <p>・高さは「何段積んだか」ではなく、お皿の上に乗っている<strong>「一番高い位置にある具材のてっぺん（cm）」</strong>で計測されます！<br>
+            ・分厚いパティやパンケーキ、極太ソーセージなどを積むと一気に高さが伸びます。</p>
+          </div>
+          <div class="manual-section">
+            <h3>3. 👑 上バンズ完成でスコア2倍！！</h3>
+            <p>・具材を1個以上積むと、右下の<strong>「👑 完成させる！(×2)」ボタン</strong>が押せるようになります。<br>
+            ・ボタンを押すとトングに<strong>「👑 特製ゴマ付き上バンズ」</strong>がセットされます。<br>
+            ・上バンズを見事タワーの上に着地させて落とさずキープできれば<strong>「🎊 特製サンドイッチ完成！！」となり、獲得した純利益（スコア）がすべて【2倍】に跳ね上がります！</strong><br>
+            ・タワーが崩れる前に手堅く2倍で完成させるか、さらに高く積んで大勝負するかが駆け引きのポイントです！</p>
+          </div>
+          <div class="manual-section">
+            <h3>4. コンボ＆隠しオーダー（レシピボーナス）</h3>
+            <p>・<strong>🌟 PERFECT着地</strong>：ど真ん中に重ねるとキラキラ星が弾け、連続コンボ数×¥500のボーナス！<br>
+            ・<strong>🍽️ 隠しレシピコンボ</strong>：<br>
+              「パティ＋チーズ＝🧀絶品チーズバーガー(+¥1,000)」<br>
+              「パティ＋目玉焼き＝🍳月見バーガー(+¥1,200)」<br>
+              「パティ＋パティ＝🥩肉汁ダブルパティ(+¥1,500)」<br>
+              「パンケーキ＋目玉焼き＝🥞モーニングパンケーキ(+¥1,200)」<br>
+              「ベーコン＋レタス＋トマト＝🥓クラシックBLT(+¥2,500)」<br>
+              「パティ＋チーズ＋パティ＝🍔ダブルチーズバーガー(+¥3,000)」</p>
+          </div>
+        </div>
+        <button id="close-manual-btn" class="main-btn">閉じる</button>
+      </div>
+    </div>
+
+    <!-- 🍔 具材図鑑モーダル（全具材の高さ・値段・特徴一覧） -->
+    <div id="catalog-modal" class="overlay">
+      <div class="modal-card scrollable-modal">
+        <div class="modal-badge">🍔 INGREDIENT ENCYCLOPEDIA</div>
+        <h2 class="modal-title">プクムク特製 具材図鑑</h2>
+        <p class="modal-desc">各具材の「高さ（厚み）」と「純利益（値段）」の一覧です</p>
+        <div id="ingredient-catalog-list" class="catalog-grid">
+          <!-- JSで全具材の高さ・値段カードを動的生成 -->
+        </div>
+        <button id="close-catalog-btn" class="main-btn">閉じる</button>
+      </div>
+    </div>
+
+    <!-- 🏆 世界ランキングモーダル（スタート画面用：高さ部門 / 純利益部門 タブ切替） -->
+    <div id="ranking-modal" class="overlay">
+      <div class="modal-card scrollable-modal">
+        <div class="modal-badge">🌍 WORLD LEADERBOARD</div>
+        <h2 class="modal-title">世界ランキング TOP 10</h2>
+        <div class="ranking-tabs">
+          <button id="modal-tab-score" class="rank-tab-btn active">💰 純利益（値段）部門</button>
+          <button id="modal-tab-height" class="rank-tab-btn">📏 高さ（cm）部門</button>
+        </div>
+        <div id="modal-ranking-list" class="ranking-list">
+          <!-- JSでリアルタイム生成 -->
+        </div>
+        <button id="close-ranking-btn" class="main-btn">閉じる</button>
       </div>
     </div>
 
     <!-- リザルト画面モーダル -->
     <div id="result-modal" class="overlay">
-      <div class="modal-card">
-        <div class="modal-badge">🎉 営業終了！</div>
-        <h2 class="modal-title">本日のサンドイッチ</h2>
+      <div class="modal-card scrollable-modal">
+        <div id="result-modal-badge" class="modal-badge">🎉 営業終了！</div>
+        <h2 id="result-modal-title" class="modal-title">本日のサンドイッチ</h2>
 
         <div class="result-score-box">
-          <div class="result-score-label">獲得純利益</div>
-          <div class="result-score-val">¥<span id="final-score-val">0</span></div>
+          <div id="result-double-badge" class="result-double-badge" style="display:none;">👑 バーガー完成ボーナス！純利益 2倍適用 (×2) ✨</div>
+          <div class="result-dual-main">
+            <div class="result-main-col">
+              <div class="result-score-label">一番上の具材の高さ</div>
+              <div class="result-height-big"><span id="final-height-val">0.0</span><small>cm</small></div>
+            </div>
+            <div class="result-main-divider"></div>
+            <div class="result-main-col">
+              <div class="result-score-label">獲得純利益 (値段)</div>
+              <div class="result-score-val">¥<span id="final-score-val">0</span></div>
+            </div>
+          </div>
           <div id="result-title-badge" class="result-title-badge">ボリューム満点バーガー！</div>
         </div>
 
         <div class="result-detail-grid">
           <div class="result-detail-item">
-            最高到達点
-            <span id="final-height-val">0.0 cm</span>
+            乗っている具材数
+            <span id="final-count-val">0 個</span>
           </div>
           <div class="result-detail-item">
-            積み上げた具材
-            <span id="final-count-val">0 個</span>
+            最大PERFECTコンボ
+            <span id="final-combo-val">0 連続</span>
+          </div>
+          <div class="result-detail-item">
+            自己ベスト高さ
+            <span id="result-best-val">0.0 cm</span>
+          </div>
+          <div class="result-detail-item">
+            自己ベスト純利益
+            <span id="result-best-score-val">¥0</span>
+          </div>
+        </div>
+
+        <!-- 📛 世界ランキング登録フォーム（スプレッドシート＆サーバー連動） -->
+        <div id="ranking-register-box" class="ranking-register-box">
+          <div class="register-label">🌍 世界ランキングに登録！(高さ＆純利益W登録)</div>
+          <div class="register-input-group">
+            <input type="text" id="player-name-input" class="player-name-input" maxlength="10" placeholder="ニックネーム (最大10文字)">
+            <button id="submit-ranking-btn" class="submit-ranking-btn">登録！</button>
+          </div>
+          <div id="ranking-feedback" class="ranking-feedback"></div>
+        </div>
+
+        <!-- 🏆 リザルト内 世界ランキング表示（タブ切替対応） -->
+        <div class="ranking-section">
+          <div class="ranking-tabs">
+            <button id="result-tab-score" class="rank-tab-btn active">💰 純利益ランキング</button>
+            <button id="result-tab-height" class="rank-tab-btn">📏 高さランキング</button>
+          </div>
+          <div id="result-ranking-list" class="ranking-list">
+            <!-- JSでリアルタイム生成 -->
           </div>
         </div>
 
         <button id="restart-btn" class="main-btn">もう一回あそぶ！</button>
+        <div class="sub-btn-grid">
+          <button id="result-catalog-btn" class="sub-btn">🍔 具材図鑑</button>
+          <button id="result-manual-btn" class="sub-btn">📘 説明書</button>
+        </div>
         <a href="../" class="sub-btn">🏠 ゲーム選択へもどる</a>
       </div>
     </div>
   </div>
 
-  <script src="tower_game.js?v=tower20261103b"></script>
+  <script src="tower_game.js?v=20261108gas"></script>
 </body>
 
 </html>

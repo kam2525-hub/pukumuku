@@ -41,81 +41,98 @@ html, body {
   display: block;
 }
 
-/* ヘッダーUI（高さ・具材数・ライフ） */
+/* ヘッダーUI（高さ・具材数・NEXT・ライフ） */
 #header-ui {
   position: absolute;
   top: 8px;
-  left: 8px;
-  right: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  left: 6px;
+  right: 6px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.1fr 1.1fr;
+  gap: 5px;
   z-index: 10;
   pointer-events: none;
 }
 
 .stat-card {
+  min-width: 0;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(8px);
-  padding: 5px 10px;
-  border-radius: 14px;
+  padding: 5px 3px;
+  border-radius: 12px;
   border: 2px solid #FFB74D;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 80px;
+  justify-content: center;
 }
 
 .stat-label {
   font-size: 9px;
   font-weight: 800;
   color: #8D6E63;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
 }
 
 .stat-value {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 900;
   color: #E65100;
   line-height: 1.1;
+  white-space: nowrap;
 }
 
 .stat-unit {
   font-size: 10px;
-  margin-left: 2px;
+  margin-left: 1px;
   color: #5D4037;
 }
 
-/* ライフ（3アウト制） */
-.lives-card {
-  min-width: 90px;
+/* NEXT具材 */
+.next-card {
+  background: #FFF9C4;
+  border-color: #FBC02D;
 }
 
-.lives-container {
-  display: flex;
-  gap: 2px;
-  font-size: 16px;
+.next-item-name {
+  font-size: 12px;
+  font-weight: 900;
+  color: #D84315;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90px;
   margin-top: 1px;
 }
 
-/* サウンド切替ボタン & ポータルへ戻るボタン */
+/* ライフ（3アウト制） */
+.lives-container {
+  display: flex;
+  gap: 2px;
+  font-size: 14px;
+  margin-top: 2px;
+}
+
+/* サウンド切替ボタン & ポータルへ戻るボタン & ベスト記録 */
 .top-actions {
   position: absolute;
-  top: 66px;
+  top: 60px;
   left: 8px;
   right: 8px;
   display: flex;
   justify-content: space-between;
+  align-items: center;
   z-index: 10;
 }
 
 .hud-btn {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.92);
   border: 2px solid #FFB74D;
   border-radius: 12px;
-  padding: 6px 12px;
-  font-size: 12px;
+  padding: 5px 10px;
+  font-size: 11px;
   font-weight: 800;
   color: #5D4037;
   cursor: pointer;
@@ -128,6 +145,53 @@ html, body {
 
 .hud-btn:active {
   background: #FFE0B2;
+}
+
+.hud-best-badge {
+  background: rgba(255, 248, 225, 0.95);
+  border: 1.5px solid #FFC107;
+  border-radius: 12px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #E65100;
+}
+
+/* コンボポップアップ演出 */
+.combo-popup {
+  position: absolute;
+  top: 32%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.5);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 30;
+  font-size: 26px;
+  font-weight: 900;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s ease;
+  white-space: nowrap;
+}
+
+.combo-popup.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1.15);
+}
+
+.combo-perfect {
+  color: #FFD700;
+  text-shadow: 0 0 12px #FF6F00, 0 2px 4px rgba(0,0,0,0.4);
+}
+
+.combo-great {
+  color: #00E676;
+  text-shadow: 0 0 10px #1B5E20, 0 2px 4px rgba(0,0,0,0.4);
+}
+
+.combo-caution {
+  color: #FF5252;
+  font-size: 20px;
+  text-shadow: 0 0 8px #B71C1C, 0 2px 4px rgba(0,0,0,0.4);
 }
 
 /* 操作ガイドヒント（画面下部） */
@@ -154,21 +218,21 @@ html, body {
   50% { transform: translateX(-50%) translateY(-6px); }
 }
 
-/* ポップアップメッセージ（「ナイス着地！」「あぶない！」） */
+/* ポップアップメッセージ（トースト） */
 #toast-msg {
   position: absolute;
-  top: 35%;
+  top: 42%;
   left: 50%;
   transform: translate(-50%, -50%) scale(0.8);
-  padding: 10px 20px;
-  border-radius: 20px;
-  font-size: 18px;
+  padding: 8px 18px;
+  border-radius: 18px;
+  font-size: 16px;
   font-weight: 900;
   color: #FFF;
   opacity: 0;
   pointer-events: none;
-  z-index: 20;
-  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s ease;
+  z-index: 25;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s ease;
 }
 
 #toast-msg.show {
@@ -190,7 +254,7 @@ html, body {
 .overlay {
   position: absolute;
   top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(62, 39, 35, 0.7);
+  background: rgba(62, 39, 35, 0.72);
   backdrop-filter: blur(4px);
   z-index: 100;
   display: none;
@@ -210,11 +274,11 @@ html, body {
   border-radius: 24px;
   border: 4px solid #E0822A;
   box-shadow: 0 16px 36px rgba(0,0,0,0.3);
-  padding: 24px 20px;
+  padding: 22px 18px;
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -235,14 +299,14 @@ html, body {
 }
 
 .modal-title {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 900;
   color: #5D4037;
   line-height: 1.25;
 }
 
 .modal-desc {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: #8D6E63;
   line-height: 1.4;
@@ -251,16 +315,27 @@ html, body {
 .instruction-box {
   background: #FFF3E0;
   border-radius: 14px;
-  padding: 12px;
-  font-size: 12px;
+  padding: 10px 12px;
+  font-size: 11px;
   font-weight: 700;
   color: #5D4037;
   line-height: 1.5;
   border: 1px dashed #FFB74D;
+  text-align: left;
 }
 
 .instruction-box strong {
   color: #E65100;
+}
+
+.modal-best-box {
+  background: #FFFDE7;
+  border: 1.5px solid #FBC02D;
+  border-radius: 12px;
+  padding: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #F57F17;
 }
 
 /* メインボタン */
@@ -269,9 +344,9 @@ html, body {
   border: 2px solid #BF360C;
   border-radius: 18px;
   color: #FFF;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 900;
-  padding: 14px 0;
+  padding: 13px 0;
   cursor: pointer;
   box-shadow: 0 6px 16px rgba(224, 130, 42, 0.4);
   text-decoration: none;
@@ -289,7 +364,7 @@ html, body {
   color: #5D4037;
   font-size: 13px;
   font-weight: 800;
-  padding: 10px 0;
+  padding: 9px 0;
   cursor: pointer;
   text-decoration: none;
   display: block;
@@ -304,40 +379,18 @@ html, body {
   background: linear-gradient(135deg, #FFF8E1, #FFECB3);
   border-radius: 16px;
   border: 2px solid #FFD54F;
-  padding: 14px;
+  padding: 12px;
 }
 
 .result-score-label {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   color: #8D6E63;
 }
 
 .result-score-val {
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 900;
-  color: #E65100;
-}
-
-.result-detail-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.result-detail-item {
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 10px;
-  padding: 6px;
-  font-size: 11px;
-  font-weight: 800;
-  color: #5D4037;
-}
-
-.result-detail-item span {
-  display: block;
-  font-size: 15px;
   color: #E65100;
 }
 
@@ -345,9 +398,626 @@ html, body {
   background: #E8F5E9;
   border: 2px solid #81C784;
   color: #2E7D32;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 900;
-  padding: 6px 12px;
+  padding: 5px 10px;
   border-radius: 12px;
   margin-top: 4px;
+}
+
+.result-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.result-detail-item {
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 10px;
+  padding: 5px 4px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #5D4037;
+}
+
+.result-detail-item span {
+  display: block;
+  font-size: 14px;
+  color: #E65100;
+  margin-top: 1px;
+}
+
+/* 純くんの応援小窓 (HUD下部) */
+.jun-cheer-widget {
+  position: absolute;
+  bottom: 14px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 2px solid #FFA726;
+  border-radius: 24px;
+  padding: 5px 12px 5px 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  z-index: 15;
+  pointer-events: none;
+  animation: junBob 2.4s ease-in-out infinite;
+}
+
+@keyframes junBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.jun-avatar-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #FFE082;
+  border: 2px solid #FFB300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.jun-balloon {
+  display: flex;
+  flex-direction: column;
+}
+
+.jun-name-tag {
+  font-size: 9px;
+  font-weight: 900;
+  color: #E65100;
+  line-height: 1;
+}
+
+.jun-balloon-text {
+  font-size: 11px;
+  font-weight: 800;
+  color: #3E2723;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+/* モーダル内の純くんメッセージボックス */
+.jun-welcome-box {
+  background: #FFF8E1;
+  border: 1.5px dashed #FFA000;
+  border-radius: 14px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: center;
+}
+
+.jun-mini-badge {
+  align-self: center;
+  background: #FFA000;
+  color: #FFF;
+  font-size: 9px;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.jun-welcome-box p {
+  font-size: 11px;
+  font-weight: 800;
+  color: #5D4037;
+  line-height: 1.3;
+}
+
+/* 下部操作コントロール（スライダー + 落とすボタン） */
+.bottom-controls {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  padding: 8px 12px;
+  border-radius: 18px;
+  border: 2px solid #FFA726;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.slider-row {
+  display: none; /* スイング投下システムのため手動スライダーは非表示 */
+}
+
+.slider-hint {
+  font-size: 10px;
+  font-weight: 800;
+  color: #8D6E63;
+}
+
+#tong-slider {
+  width: 100%;
+  height: 8px;
+  -webkit-appearance: none;
+  background: #FFE0B2;
+  border-radius: 4px;
+  outline: none;
+}
+
+#tong-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #E65100;
+  border: 3px solid #FFF;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+
+.action-buttons-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.drop-action-btn {
+  flex: 1.4;
+  padding: 13px 10px;
+  background: linear-gradient(180deg, #FF9800 0%, #E65100 100%);
+  color: #FFF;
+  border: 2px solid #FFE0B2;
+  border-radius: 16px;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(230, 81, 0, 0.35);
+  transition: transform 0.1s, filter 0.1s;
+  white-space: nowrap;
+}
+
+.drop-action-btn:active {
+  transform: scale(0.97);
+  filter: brightness(0.92);
+}
+
+.finish-bun-btn {
+  flex: 1;
+  padding: 13px 8px;
+  background: linear-gradient(180deg, #FFD54F 0%, #F57F17 100%);
+  color: #3E2723;
+  border: 2px solid #FFF8E1;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(245, 127, 23, 0.35);
+  transition: transform 0.15s, filter 0.15s, opacity 0.2s;
+  white-space: nowrap;
+}
+
+.finish-bun-btn:disabled {
+  background: #E0E0E0;
+  color: #9E9E9E;
+  border-color: #F5F5F5;
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.finish-bun-btn.ready-glow {
+  animation: pulseGold 1.4s infinite ease-in-out;
+  background: linear-gradient(180deg, #FFEE58 0%, #FF8F00 100%);
+  color: #BF360C;
+  border-color: #FFFFFF;
+}
+
+@keyframes pulseGold {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 193, 7, 0.6); }
+  50% { transform: scale(1.04); box-shadow: 0 0 20px rgba(255, 215, 0, 0.95); }
+}
+
+/* レシピ完成ボーナス ポップアップ */
+.recipe-popup {
+  position: absolute;
+  top: 155px;
+  left: 50%;
+  transform: translateX(-50%) scale(0.5);
+  background: linear-gradient(135deg, #FFF8E1 0%, #FFD54F 100%);
+  border: 3px solid #FF6F00;
+  border-radius: 22px;
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 900;
+  color: #BF360C;
+  box-shadow: 0 8px 24px rgba(230, 81, 0, 0.35);
+  z-index: 25;
+  pointer-events: none;
+  opacity: 0;
+  white-space: nowrap;
+  text-align: center;
+  transition: transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s;
+}
+
+.recipe-popup.show {
+  transform: translateX(-50%) scale(1);
+  opacity: 1;
+}
+
+/* レア具材出現時のNEXTカード輝き */
+.next-card.rare-glow {
+  background: linear-gradient(135deg, #FFFDE7 0%, #FFD54F 100%);
+  border-color: #FF6F00;
+  box-shadow: 0 0 14px rgba(255, 193, 7, 0.85);
+  animation: pulseGold 1.1s infinite ease-in-out;
+}
+
+/* スクロール対応モーダル（説明書・図鑑・ランキング・リザルト用） */
+.scrollable-modal {
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 16px 14px;
+  gap: 8px;
+}
+
+.sub-btn-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+#result-modal .sub-btn-grid {
+  grid-template-columns: 1fr 1fr;
+}
+
+.sub-btn-grid .sub-btn {
+  font-size: 11px;
+  padding: 8px 4px;
+  white-space: nowrap;
+}
+
+/* リザルト画面：高さ＆純利益Wメイン表示・2倍バッジ */
+.result-double-badge {
+  background: linear-gradient(90deg, #FF6F00, #F57F17);
+  color: #FFF;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 4px 10px;
+  border-radius: 12px;
+  margin-bottom: 6px;
+  box-shadow: 0 2px 8px rgba(230, 81, 0, 0.35);
+  animation: pulseGold 1.2s infinite ease-in-out;
+}
+
+.result-dual-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 6px;
+}
+
+.result-main-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.result-main-divider {
+  width: 2px;
+  height: 38px;
+  background: rgba(224, 130, 42, 0.35);
+}
+
+.result-height-big {
+  font-size: 24px;
+  font-weight: 900;
+  color: #D84315;
+}
+
+.result-height-big small {
+  font-size: 13px;
+  margin-left: 2px;
+}
+
+.result-score-val {
+  font-size: 24px;
+  font-weight: 900;
+  color: #E65100;
+}
+
+/* 世界ランキング登録＆タブ切替リスト */
+.ranking-register-box {
+  background: #FFF8E1;
+  border: 2px solid #FFB300;
+  border-radius: 14px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.register-label {
+  font-size: 11px;
+  font-weight: 900;
+  color: #E65100;
+}
+
+.register-input-group {
+  display: flex;
+  gap: 6px;
+}
+
+.player-name-input {
+  flex: 1;
+  min-width: 0;
+  border: 2px solid #FFB74D;
+  border-radius: 10px;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 800;
+  font-family: inherit;
+  color: #3E2723;
+  background: #FFF;
+  user-select: text;
+}
+
+.submit-ranking-btn {
+  background: linear-gradient(180deg, #43A047, #2E7D32);
+  color: #FFF;
+  border: none;
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.submit-ranking-btn:disabled {
+  background: #9E9E9E;
+  cursor: default;
+}
+
+.ranking-feedback {
+  font-size: 11px;
+  font-weight: 900;
+  min-height: 15px;
+}
+
+.ranking-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ranking-tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.rank-tab-btn {
+  flex: 1;
+  background: #FFF3E0;
+  border: 2px solid #FFB74D;
+  border-radius: 10px;
+  padding: 6px 4px;
+  font-size: 11px;
+  font-weight: 900;
+  color: #8D6E63;
+  cursor: pointer;
+}
+
+.rank-tab-btn.active {
+  background: #E65100;
+  border-color: #BF360C;
+  color: #FFF;
+}
+
+.ranking-list {
+  background: #FFF;
+  border: 2px solid #FFE082;
+  border-radius: 12px;
+  padding: 4px 6px;
+  max-height: 165px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ranking-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px;
+  border-bottom: 1px dashed #FFE0B2;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.ranking-row:last-child {
+  border-bottom: none;
+}
+
+.ranking-row.current-play {
+  background: #FFF9C4;
+  border-radius: 8px;
+  border: 1.5px solid #FBC02D;
+}
+
+.ranking-rank {
+  width: 34px;
+  text-align: left;
+  color: #D84315;
+  font-weight: 900;
+}
+
+.ranking-name {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #3E2723;
+}
+
+.ranking-metric {
+  font-weight: 900;
+  color: #E65100;
+  margin-left: 6px;
+}
+
+.ranking-sub {
+  font-size: 9px;
+  color: #8D6E63;
+  margin-left: 6px;
+  min-width: 48px;
+  text-align: right;
+}
+
+/* 📘 説明書スタイル */
+.manual-content {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 58vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.manual-section {
+  background: #FFF8E1;
+  border: 1.5px solid #FFE082;
+  border-radius: 12px;
+  padding: 8px 10px;
+}
+
+.manual-section h3 {
+  font-size: 12px;
+  font-weight: 900;
+  color: #E65100;
+  margin-bottom: 4px;
+}
+
+.manual-section p {
+  font-size: 11px;
+  font-weight: 700;
+  color: #4E342E;
+  line-height: 1.45;
+}
+
+/* 🍔 具材図鑑カード一覧スタイル（Blender 3Dモデル画像付き） */
+.catalog-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.catalog-item-card {
+  background: #FFFDF7;
+  border: 2px solid #FFCC80;
+  border-radius: 14px;
+  padding: 8px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.catalog-item-card.rare-card {
+  background: linear-gradient(135deg, #FFFDE7, #FFECB3);
+  border-color: #FFA000;
+  box-shadow: 0 3px 10px rgba(255, 160, 0, 0.18);
+}
+
+.catalog-thumb-wrap {
+  width: 100%;
+  height: 92px;
+  background: radial-gradient(circle at 50% 45%, #FFFDF9 0%, #F5E6CC 100%);
+  border: 1.5px solid #FFE0B2;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.catalog-item-card.rare-card .catalog-thumb-wrap {
+  background: radial-gradient(circle at 50% 45%, #FFFDE7 0%, #FFE082 100%);
+  border-color: #FFD54F;
+}
+
+.catalog-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 3px 5px rgba(80, 40, 0, 0.18));
+}
+
+.catalog-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 3px;
+  font-size: 11.5px;
+  font-weight: 900;
+  color: #3E2723;
+  margin-top: 2px;
+}
+
+.catalog-rare-badge {
+  background: linear-gradient(135deg, #FF8F00, #E65100);
+  color: #FFF;
+  font-size: 8.5px;
+  font-weight: 900;
+  padding: 1.5px 5px;
+  border-radius: 6px;
+}
+
+.catalog-item-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 1px;
+}
+
+.catalog-metric-pill {
+  background: #FFF3E0;
+  border: 1px solid #FFE0B2;
+  border-radius: 6px;
+  padding: 2.5px 6px;
+  font-size: 10px;
+  font-weight: 900;
+  color: #D84315;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.catalog-metric-pill.price-pill {
+  background: #FFF8E1;
+  color: #E65100;
+}
+
+.catalog-item-desc {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #5D4037;
+  line-height: 1.35;
+  margin-top: 2px;
 }
