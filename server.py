@@ -53,6 +53,20 @@ DEFAULT_TOWER_RANKINGS = [
     {"id": "tw_init_8", "name": "はらぺこキッズ", "score": 5200, "height": 8.5, "date": "11/08 11:30"},
 ]
 
+def deduplicate_by_name(records, key_func):
+    """同一プレイヤー名（ニックネーム）の重複を完全排除し、各プレイヤーの最高記録のみ残す"""
+    sorted_items = sorted(records, key=key_func, reverse=True)
+    seen = set()
+    unique = []
+    for item in sorted_items:
+        clean_name = item.get('name', '').strip()
+        if not clean_name:
+            continue
+        if clean_name not in seen:
+            seen.add(clean_name)
+            unique.append(item)
+    return unique
+
 def load_tower_rankings():
     with lock:
         if not os.path.exists(TOWER_DATA_FILE):
@@ -90,11 +104,11 @@ def save_tower_score(name, score, height):
         with open(TOWER_DATA_FILE, 'w', encoding='utf-8') as f:
             json.dump(rankings, f, ensure_ascii=False, indent=2)
 
-        by_score = sorted(rankings, key=lambda x: (x.get('score', 0), x.get('height', 0)), reverse=True)
-        by_height = sorted(rankings, key=lambda x: (x.get('height', 0), x.get('score', 0)), reverse=True)
+        by_score = deduplicate_by_name(rankings, lambda x: (x.get('score', 0), x.get('height', 0)))
+        by_height = deduplicate_by_name(rankings, lambda x: (x.get('height', 0), x.get('score', 0)))
 
-        score_pos = next((i + 1 for i, r in enumerate(by_score) if r.get('id') == entry_id), None)
-        height_pos = next((i + 1 for i, r in enumerate(by_height) if r.get('id') == entry_id), None)
+        score_pos = next((i + 1 for i, r in enumerate(by_score) if r.get('id') == entry_id or r.get('name') == clean_name), None)
+        height_pos = next((i + 1 for i, r in enumerate(by_height) if r.get('id') == entry_id or r.get('name') == clean_name), None)
 
         return {
             "scoreRankings": by_score[:10],
@@ -152,15 +166,18 @@ def save_score(name, score):
         
         save_rankings_internal(rankings)
         
+        # 同一プレイヤー名の重複を排除（1人1枠・最高得点のみ）
+        unique_rankings = deduplicate_by_name(rankings, lambda x: x.get('score', 0))
+        
         # ランク（順位）の特定
         rank_pos = None
-        for idx, item in enumerate(rankings):
-            if item.get('id') == entry_id:
+        for idx, item in enumerate(unique_rankings):
+            if item.get('id') == entry_id or item.get('name') == clean_name:
                 rank_pos = idx + 1
                 break
                 
         return {
-            "rankings": rankings[:10],
+            "rankings": unique_rankings[:10],
             "currentEntry": new_entry,
             "rankPosition": rank_pos
         }
@@ -180,8 +197,8 @@ class BakeryRequestHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path.startswith('/api/tower_ranking'):
             rankings = load_tower_rankings()
-            by_score = sorted(rankings, key=lambda x: (x.get('score', 0), x.get('height', 0)), reverse=True)[:10]
-            by_height = sorted(rankings, key=lambda x: (x.get('height', 0), x.get('score', 0)), reverse=True)[:10]
+            by_score = deduplicate_by_name(rankings, lambda x: (x.get('score', 0), x.get('height', 0)))[:10]
+            by_height = deduplicate_by_name(rankings, lambda x: (x.get('height', 0), x.get('score', 0)))[:10]
             payload = json.dumps({
                 "status": "ok",
                 "scoreRankings": by_score,
@@ -197,8 +214,7 @@ class BakeryRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         if self.path.startswith('/api/ranking'):
             rankings = load_rankings()
-            rankings.sort(key=lambda x: x.get('score', 0), reverse=True)
-            top10 = rankings[:10]
+            top10 = deduplicate_by_name(rankings, lambda x: x.get('score', 0))[:10]
             
             payload = json.dumps({"status": "ok", "rankings": top10}, ensure_ascii=False).encode('utf-8')
             self.send_response(200)

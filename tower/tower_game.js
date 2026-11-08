@@ -2603,7 +2603,21 @@ function getLocalTowerRankings() {
 
 function saveLocalTowerRankingEntry(entry) {
   const list = getLocalTowerRankings();
-  list.push(entry);
+  const cleanName = (entry.name || '').trim();
+  const existingIdx = list.findIndex(r => (r.name || '').trim() === cleanName);
+  if (existingIdx !== -1) {
+    const existing = list[existingIdx];
+    list[existingIdx] = {
+      ...existing,
+      id: entry.id,
+      score: Math.max(Number(existing.score || 0), Number(entry.score || 0)),
+      height: Math.max(Number(existing.height || 0), Number(entry.height || 0)),
+      completed: existing.completed || entry.completed,
+      date: entry.date || existing.date
+    };
+  } else {
+    list.push(entry);
+  }
   try {
     localStorage.setItem(LOCAL_TOWER_RANKING_KEY, JSON.stringify(list.slice(-100)));
   } catch (e) {}
@@ -2683,30 +2697,36 @@ async function fetchTowerRankings(mode = 'score', containerId = 'modal-ranking-l
     }
   }
 
-  // 3. ローカルストレージのデータと統合して重複排除＆ソート
+  // 3. ローカルストレージのデータと統合し、指定モードでソート
   const localRecords = getLocalTowerRankings();
-  const mergedMap = new Map();
-  [...records, ...localRecords].forEach(r => {
-    const key = r.id || `${r.name}_${r.score}_${r.height}`;
-    if (!mergedMap.has(key)) {
-      mergedMap.set(key, {
-        id: r.id || key,
-        name: String(r.name || '名無し職人').slice(0, 12),
-        score: Number(r.score || 0),
-        height: Number(r.height || 0),
-        completed: Boolean(r.completed)
-      });
-    }
-  });
+  const rawCombined = [...records, ...localRecords].map(r => ({
+    id: r.id || `${r.name}_${r.score}_${r.height}`,
+    name: String(r.name || '名無し職人').trim().slice(0, 12),
+    score: Number(r.score || 0),
+    height: Number(r.height || 0),
+    completed: Boolean(r.completed),
+    date: r.date || ''
+  }));
 
-  const allList = Array.from(mergedMap.values());
+  // まず指定モードで降順ソート（最高記録が先頭に来るようにする）
   if (mode === 'height') {
-    allList.sort((a, b) => (b.height - a.height) || (b.score - a.score));
+    rawCombined.sort((a, b) => (b.height - a.height) || (b.score - a.score));
   } else {
-    allList.sort((a, b) => (b.score - a.score) || (b.height - a.height));
+    rawCombined.sort((a, b) => (b.score - a.score) || (b.height - a.height));
   }
 
-  renderTowerRankingItems(allList.slice(0, 30), mode, listEl, highlightId || lastSubmittedTowerRecordId);
+  // ★【同一名前・重複スコアの完全排除（1プレイヤー1枠・自己最高記録のみ掲載）】
+  const uniqueRankings = [];
+  const seenNames = new Set();
+  for (const r of rawCombined) {
+    if (!r.name) continue;
+    if (!seenNames.has(r.name)) {
+      seenNames.add(r.name);
+      uniqueRankings.push(r);
+    }
+  }
+
+  renderTowerRankingItems(uniqueRankings.slice(0, 30), mode, listEl, highlightId || lastSubmittedTowerRecordId);
 }
 
 function renderTowerRankingItems(items, mode, containerEl, highlightId) {
@@ -2716,6 +2736,8 @@ function renderTowerRankingItems(items, mode, containerEl, highlightId) {
     return;
   }
 
+  const currentPlayerName = localStorage.getItem('pukumuku_player_name') || '';
+
   containerEl.innerHTML = items.map((item, idx) => {
     const rank = idx + 1;
     let rankBadge = `${rank}位`;
@@ -2724,7 +2746,9 @@ function renderTowerRankingItems(items, mode, containerEl, highlightId) {
     else if (rank === 2) { rankBadge = '🥈 2位'; rowClass += ' rank-2'; }
     else if (rank === 3) { rankBadge = '🥉 3位'; rowClass += ' rank-3'; }
 
-    if (highlightId && item.id === highlightId) {
+    const isMyHighlight = (highlightId && (item.id === highlightId)) ||
+                          (highlightId && currentPlayerName && item.name === currentPlayerName);
+    if (isMyHighlight) {
       rowClass += ' rank-me';
     }
 

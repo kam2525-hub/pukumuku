@@ -1647,21 +1647,28 @@ const DEFAULT_ONLINE_RANKINGS = [
   { id: 'puku_init_8', name: 'プクムク常連A', score: 6700, date: '11/03 16:00' }
 ];
 
+function filterUniqueCatchRankings(list) {
+  if (!list || !Array.isArray(list)) return [];
+  const sorted = [...list].sort((a, b) => (Number(b.score) || 0) - (Number(a.score) || 0));
+  const seen = new Set();
+  const unique = [];
+  for (const item of sorted) {
+    const cleanName = (item.name || '名無しパン職人').trim();
+    if (!cleanName) continue;
+    if (!seen.has(cleanName)) {
+      seen.add(cleanName);
+      unique.push(item);
+    }
+  }
+  return unique;
+}
+
 function getMergedLocalRankings() {
   try {
     const raw = localStorage.getItem(LOCAL_FALLBACK_KEY);
     const customList = raw ? JSON.parse(raw) : [];
     const all = [...customList, ...DEFAULT_ONLINE_RANKINGS];
-    const seen = new Set();
-    const unique = [];
-    for (const item of all) {
-      if (!seen.has(item.id)) {
-        seen.add(item.id);
-        unique.push(item);
-      }
-    }
-    unique.sort((a, b) => (b.score || 0) - (a.score || 0));
-    return unique.slice(0, 10);
+    return filterUniqueCatchRankings(all).slice(0, 10);
   } catch (e) {
     return DEFAULT_ONLINE_RANKINGS.slice(0, 10);
   }
@@ -1688,12 +1695,15 @@ function escapeHtml(str) {
 }
 
 function renderRankingHTML(rankings, highlightId = null) {
-  if (!rankings || rankings.length === 0) {
+  const uniqueRankings = filterUniqueCatchRankings(rankings);
+  if (!uniqueRankings || uniqueRankings.length === 0) {
     return '<div class="ranking-row"><span style="flex:1; text-align:center;">まだ記録がありません</span></div>';
   }
+  const currentSavedName = localStorage.getItem(PLAYER_NAME_STORAGE_KEY) || '';
   const medals = ['🥇', '🥈', '🥉', '4位', '5位', '6位', '7位', '8位', '9位', '10位'];
-  return rankings.map((item, idx) => {
-    const isHighlight = highlightId && (item.id === highlightId);
+  return uniqueRankings.slice(0, 10).map((item, idx) => {
+    const isHighlight = (highlightId && (item.id === highlightId)) ||
+                        (highlightId && currentSavedName && item.name === currentSavedName);
     return `
       <div class="ranking-row ${isHighlight ? 'current-play' : ''}">
         <span class="ranking-rank">${medals[idx] || (idx + 1 + '位')}</span>
