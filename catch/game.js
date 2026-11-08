@@ -372,7 +372,7 @@ let gameState = {
   feverCooldownTimer: 0,
   megaBoxTimer: 0,
   speedTimer: 0,
-  slowFallTimer: 0,
+  breadRushTimer: 0,
   shieldCount: 0,
   timeBonusUsed: 0,
   breadCount: Object.fromEntries(Object.keys(BREAD_TYPES).map(key => [key, 0])),
@@ -1043,7 +1043,7 @@ function updateEffectStatus() {
   if (gameState.isFever) effects.push(`🔥 2倍 ${Math.ceil(gameState.feverTimer)}秒`);
   if (gameState.megaBoxTimer > 0) effects.push(`🍄 大きな箱 ${Math.ceil(gameState.megaBoxTimer)}秒`);
   if (gameState.speedTimer > 0) effects.push(`💨 快速 ${Math.ceil(gameState.speedTimer)}秒`);
-  if (gameState.slowFallTimer > 0) effects.push(`🪶 ゆっくり ${Math.ceil(gameState.slowFallTimer)}秒`);
+  if (gameState.breadRushTimer > 0) effects.push(`🍞 パンラッシュ ${Math.ceil(gameState.breadRushTimer)}秒`);
   if (gameState.shieldCount > 0) effects.push('🛡️ コゲ防止 1回');
   const status = effects.join('|');
   if (status === lastEffectStatus) return;
@@ -1106,8 +1106,8 @@ function animate() {
       if (gameState.speedTimer > 0) {
         gameState.speedTimer -= delta;
       }
-      if (gameState.slowFallTimer > 0) {
-        gameState.slowFallTimer -= delta;
+      if (gameState.breadRushTimer > 0) {
+        gameState.breadRushTimer -= delta;
       }
       updateEffectStatus();
 
@@ -1206,7 +1206,8 @@ function animate() {
 
     // パンの生成 (ゲーム中のみ)
     if (gameState.isRunning) {
-      const interval = gameState.isFever ? 0.45 : 0.85;
+      const baseInterval = gameState.isFever ? 0.45 : 0.85;
+      const interval = gameState.breadRushTimer > 0 ? Math.max(0.32, baseInterval * 0.55) : baseInterval;
       spawnTimer += delta;
       if (spawnTimer >= interval) {
         spawnTimer = 0;
@@ -1216,7 +1217,7 @@ function animate() {
       // 落ちてくるパンの更新 & キャッチ判定
       for (let i = activeBreads.length - 1; i >= 0; i--) {
         const b = activeBreads[i];
-        b.mesh.position.y -= b.speed * delta * (gameState.slowFallTimer > 0 ? 0.68 : 1);
+        b.mesh.position.y -= b.speed * delta;
         b.mesh.rotation.x += b.rotSpeedX * delta;
         b.mesh.rotation.y += b.rotSpeedY * delta;
         b.mesh.position.x += Math.sin(clock.getElapsedTime() * 3 + b.wobblePhase) * 0.01;
@@ -1287,9 +1288,9 @@ function animate() {
                 gameState.shieldCount = 1;
                 effectText = '🛡️ コゲを1回防ぐ';
                 break;
-              case 'slow_fall':
-                gameState.slowFallTimer = 6;
-                effectText = '🪶 落下がゆっくり';
+              case 'bread_rush':
+                gameState.breadRushTimer = 6;
+                effectText = '🍞 パンが多く降る';
                 break;
               case 'combo': effectText = '🔗 コンボ+2'; break;
               case 'bonus': effectText = '✨ おまけ+¥60'; break;
@@ -1406,7 +1407,7 @@ function startGame() {
   gameState.feverCooldownTimer = 0;
   gameState.megaBoxTimer = 0;
   gameState.speedTimer = 0;
-  gameState.slowFallTimer = 0;
+  gameState.breadRushTimer = 0;
   gameState.shieldCount = 0;
   gameState.timeBonusUsed = 0;
   spawnTimer = 0;
