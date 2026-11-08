@@ -22,11 +22,10 @@ def mat(name, rgb, rough=.58):
     m = bpy.data.materials.new(name)
     m.diffuse_color = (*rgb, 1)
     m.use_nodes = True
-    bs = m.node_tree.nodes.get('Principled BSDF')
-    if bs is None:
-        bs = m.node_tree.nodes.new('ShaderNodeBsdfPrincipled')
-        output = m.node_tree.nodes.new('ShaderNodeOutputMaterial')
-        m.node_tree.links.new(bs.outputs['BSDF'], output.inputs['Surface'])
+    m.node_tree.nodes.clear()
+    bs = m.node_tree.nodes.new('ShaderNodeBsdfPrincipled')
+    output = m.node_tree.nodes.new('ShaderNodeOutputMaterial')
+    m.node_tree.links.new(bs.outputs['BSDF'], output.inputs['Surface'])
     bs.inputs['Base Color'].default_value = (*rgb, 1)
     bs.inputs['Roughness'].default_value = rough
     return m
