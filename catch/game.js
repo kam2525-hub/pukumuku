@@ -903,11 +903,13 @@ function chooseBreadType() {
     }
     const feverBreads = [
       'bread_burger', 'bread_egg', 'bread_croissant', 'bread_melon',
-      'bread_cream', 'bread_mushroom', 'bread_negi', 'bread_cocoa'
+      'bread_cream', 'bread_mushroom', 'bread_negi', 'bread_cocoa',
+      'bread_cream_melon', 'bread_potato', 'bread_chocolate', 'bread_pumpkin', 'bread_sweet_potato'
     ];
     return feverBreads[Math.floor(Math.random() * feverBreads.length)];
   }
-  const r = Math.random();
+  const totalWeight = Object.values(BREAD_TYPES).reduce((sum, bread) => sum + bread.prob, 0);
+  const r = Math.random() * totalWeight;
   let acc = 0;
   for (const [key, val] of Object.entries(BREAD_TYPES)) {
     acc += val.prob;

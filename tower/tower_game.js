@@ -1,5 +1,5 @@
 // ============================================================
-// 🍔 ぐらぐら！サンドイッチタワー (C) パン工房プクムク
+// 🍔 ぐらぐら！ハンバーガータワー (C) パン工房プクムク
 // Three.js + Cannon.js 3D物理シミュレーション (パンケーキタワー風)
 // ============================================================
 
@@ -368,7 +368,7 @@ const INGREDIENTS_DEF = [
     height: 0.10, // 1.00 cm
     depth: 0.88,
     price: 380,
-    desc: '森のバターと呼ばれる濃厚アボカド。カフェ風リッチサンドに！',
+    desc: '森のバターと呼ばれる濃厚アボカド。彩りのよいバーガーに！',
     mass: 1.0,
     friction: 0.98,
     color: 0x558B2F,
@@ -388,6 +388,20 @@ const INGREDIENTS_DEF = [
     color: 0xDDA15E,
     glbFile: 'item_pancake.glb'
   },
+  // プクムクバーガーにも入るピクルス。小さくて少し狙いづらい。
+  {
+    id: 'item_pickles',
+    name: '🥒 ピクルス',
+    type: 'cylinder',
+    radius: 0.38,
+    height: 0.10,
+    price: 220,
+    desc: 'プクムクバーガーでおなじみのピクルス。小ぶりなので慎重に狙おう。',
+    mass: 1.0,
+    friction: 0.98,
+    color: 0x91B748,
+    glbFile: 'item_pickles.glb'
+  },
   // 11. 【レア具材】黄金の特大パティ（幅広で超積みやすく、一撃+¥2,000！）
   {
     id: 'item_golden_patty',
@@ -396,7 +410,7 @@ const INGREDIENTS_DEF = [
     radius: 0.61,
     height: 0.21, // 2.10 cm
     price: 2000,
-    desc: '【レア】24Kに輝く特大黄金パティ！超幅広で積みやすく一撃¥2,000！',
+    desc: '【レア】金色に輝く特大パティ！超幅広で積みやすく一撃¥2,000！',
     mass: 1.0,
     friction: 0.98,
     color: 0xFFD700,
@@ -419,7 +433,7 @@ const INGREDIENTS_DEF = [
     color: 0xC62828,
     isRare: true,
     bonusScore: 1800,
-    glbFile: 'item_bacon.glb'
+    glbFile: 'item_grilled_sausage.glb'
   }
 ];
 
@@ -1211,7 +1225,7 @@ function pickNextIngredient() {
   }
   // 4〜6段: BLTや野菜系も加わる
   if (stackedCount < 6) {
-    const midPool = normalDefs.filter(d => ['item_patty', 'item_cheese', 'item_bacon', 'item_lettuce', 'item_tomato', 'item_fried_egg', 'item_pancake'].includes(d.id));
+    const midPool = normalDefs.filter(d => ['item_patty', 'item_cheese', 'item_bacon', 'item_lettuce', 'item_tomato', 'item_fried_egg', 'item_pancake', 'item_pickles'].includes(d.id));
     return midPool[Math.floor(Math.random() * midPool.length)];
   }
   return normalDefs[Math.floor(Math.random() * normalDefs.length)];
@@ -1539,7 +1553,7 @@ function checkRecipeCombo(validTower) {
   if (top3) {
     const set3 = new Set([top1, top2, top3]);
     if (set3.has('item_bacon') && set3.has('item_lettuce') && set3.has('item_tomato')) {
-      recipeName = '🥓🥬🍅 クラシックBLTサンド完成！';
+      recipeName = '🥓🥬🍅 クラシックBLTバーガー完成！';
       recipeBonus = 2500;
     } else if (isPatty(top1) && top2 === 'item_cheese' && isPatty(top3)) {
       recipeName = '🍔🧀 ダブルチーズバーガー完成！';
@@ -1818,7 +1832,7 @@ function rebuildValidTower(delta) {
         spawnJuicyParticles(item.body.position, 0xFFD700, 20);
       }
 
-      // ★仕上げの上バンズが乗ったら「🍔 特製サンドイッチ完成！！」大ファンファーレ！
+      // ★仕上げの上バンズが乗ったら「🍔 特製ハンバーガー完成！！」大ファンファーレ！
       if (item.def.isTopBun) {
         completedWithTopBun = true;
         spawnJuicyParticles(item.body.position, 0xFFD700, 32);
@@ -1904,14 +1918,14 @@ function handleCenterCombo(offset, item) {
   }
 }
 
-// ★上バンズ着地による「🍔 特製サンドイッチ完成！！」大団円フィニッシュ（純利益2倍ボーナス！）
+// ★上バンズ着地による「🍔 特製ハンバーガー完成！！」大団円フィニッシュ（純利益2倍ボーナス！）
 function completeSandwichTower() {
   isPlaying = false;
   isDropping = true;
   isGameCompletedWithBun = true;
   sounds.playFanfare();
   triggerJunReaction('big_success');
-  showToast('🎊 特製サンドイッチ完成！！純利益スコアが【2倍(×2)】に！！', 'good');
+  showToast('🎊 特製ハンバーガー完成！！純利益スコアが【2倍(×2)】に！！', 'good');
 
   setTimeout(() => {
     endGame(true);
@@ -2105,16 +2119,16 @@ function endGame(isCompleted = false) {
   const doubleBadge = document.getElementById('result-double-badge');
   if (isCompleted) {
     if (modalBadge) modalBadge.innerText = '👑 SPECIAL ORDER COMPLETE!';
-    if (modalTitle) modalTitle.innerText = '🎊 特製サンドイッチ完成！！';
+    if (modalTitle) modalTitle.innerText = '🎊 特製ハンバーガー完成！！';
     if (doubleBadge) doubleBadge.style.display = 'block';
   } else {
     if (modalBadge) modalBadge.innerText = '🔔 営業終了！';
-    if (modalTitle) modalTitle.innerText = '本日のサンドイッチ成果';
+    if (modalTitle) modalTitle.innerText = '本日のハンバーガー成果';
     if (doubleBadge) doubleBadge.style.display = 'none';
   }
 
   // 称号判定（高さcm基準）
-  let title = isCompleted ? '👑 本日の特製サンドイッチ！' : 'お試しミニサンド';
+  let title = isCompleted ? '👑 本日の特製ハンバーガー！' : 'お試しミニバーガー';
   if (heightCm >= 50) {
     title = '🌌 宇宙に届く伝説のプクムクタワー！';
   } else if (heightCm >= 30) {
@@ -2122,7 +2136,7 @@ function endGame(isCompleted = false) {
   } else if (heightCm >= 15) {
     title = isCompleted ? '👑 特製ボリューム満点大繁盛バーガー！' : '🍔 ボリューム満点大繁盛バーガー！';
   } else if (heightCm >= 5) {
-    title = isCompleted ? '👑 こんがり特製手作りバーガー！' : '🥪 なかなか見事な手作りサンド！';
+    title = isCompleted ? '👑 こんがり特製手作りバーガー！' : '🥪 なかなか見事な手作りバーガー！';
   }
 
   // リザルト画面への反映
@@ -2530,7 +2544,7 @@ function renderIngredientCatalog() {
   allItems.forEach(def => {
     const heightCm = (def.height * 10).toFixed(2).replace(/0$/, '');
     const price = def.price || 300;
-    const desc = def.desc || 'プクムク特製の美味しいサンドイッチ具材！';
+    const desc = def.desc || 'プクムク特製の美味しいハンバーガー具材！';
     const isSpecial = def.isRare || def.isTopBun;
 
     const thumbUrl = renderCatalogModelToDataURL(def);
@@ -2563,7 +2577,7 @@ function renderIngredientCatalog() {
   });
 }
 
-// --- 6. 世界ランキングシステム（サンドイッチタワー専用スプレッドシート Web App URL） ---
+// --- 6. 世界ランキングシステム（ハンバーガータワー専用スプレッドシート Web App URL） ---
 const TOWER_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbx5KO9aojN0Vw2R5goL6pHybirY8Ldwk6pnqV5Wgbxb21JW7BzeSYBBn573Q_8AawUCKA/exec';
 const LOCAL_TOWER_RANKING_API = '/api/tower_ranking';
 const LOCAL_TOWER_RANKING_KEY = 'pukumuku_sandwich_tower_rankings_v3';
@@ -2603,7 +2617,7 @@ function getLocalTowerRankings() {
     { id: 'def1', name: 'プクムク職人', score: 18400, height: 26.5, completed: true, date: '2026/11/08' },
     { id: 'def2', name: '純くんファン', score: 14200, height: 22.0, completed: true, date: '2026/11/08' },
     { id: 'def3', name: 'バーガー王', score: 11500, height: 19.8, completed: false, date: '2026/11/08' },
-    { id: 'def4', name: 'サンドマスター', score: 8900, height: 15.4, completed: true, date: '2026/11/08' },
+    { id: 'def4', name: 'バーガーマスター', score: 8900, height: 15.4, completed: true, date: '2026/11/08' },
     { id: 'def5', name: 'たまご大好き', score: 6200, height: 11.2, completed: false, date: '2026/11/08' }
   ];
   try {
@@ -2685,7 +2699,7 @@ async function fetchTowerRankings(mode = 'score', containerId = 'modal-ranking-l
     // フォールバックへ
   }
 
-  // 2. サンドイッチタワー専用スプレッドシート (Google Apps Script Web App) からも取得して統合
+  // 2. ハンバーガータワー専用スプレッドシート (Google Apps Script Web App) からも取得して統合
   if (TOWER_GAS_API_URL) {
     try {
       const gasRes = await fetch(`${TOWER_GAS_API_URL}?game=sandwich_tower&sheet=sandwich_tower&mode=${mode}&t=${Date.now()}`, { cache: 'no-store' });
