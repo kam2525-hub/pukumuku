@@ -1631,7 +1631,7 @@ function endGame() {
 }
 
 // --- 8. 全国プクムク純利益ランキングシステム ---
-const RANKING_API_URL = 'https://script.google.com/macros/s/AKfycbxTZ2XwK5kDfcIzTN_9xCflC9TNH7mgaVanEJirthh1rrnnPlNCTcOHgANm7EyDekAITg/exec';
+const RANKING_API_URL = 'https://script.google.com/macros/s/AKfycbw843NhcKP_b8xymYXI_Qj14Gnw-3PpeZFRr5sBkOSfdnSGwR5yzpwg4FejtzU9wdUlaw/exec';
 const PLAYER_NAME_STORAGE_KEY = 'pukumuku_player_name_v1';
 const LOCAL_FALLBACK_KEY = 'pukumuku_bakery_ranking_fallback_v1';
 

@@ -2564,7 +2564,7 @@ function renderIngredientCatalog() {
 }
 
 // --- 6. 世界ランキングシステム（サンドイッチタワー専用スプレッドシート Web App URL） ---
-const TOWER_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxpxw0_S9XiUARODxQJ5Icv-jZ6t1kgBgbPn_6PXmApCq1JaUh5lzewaxofPPMdxqkIjg/exec';
+const TOWER_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbw843NhcKP_b8xymYXI_Qj14Gnw-3PpeZFRr5sBkOSfdnSGwR5yzpwg4FejtzU9wdUlaw/exec';
 const LOCAL_TOWER_RANKING_API = '/api/tower_ranking';
 const LOCAL_TOWER_RANKING_KEY = 'pukumuku_sandwich_tower_rankings_v3';
 
