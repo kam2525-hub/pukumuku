@@ -60,6 +60,29 @@ for (const [key, name] of MENU_BREADS) {
     scale: 0.27, towerScale: 0.16, speed: 3.8, prob: 0.042 };
 }
 
+// 同じ効果でもパンの見た目と具材から連想できる組み合わせにする。
+const BREAD_POWER_GROUPS = {
+  fever: ['bread_egg', 'bread_cream_melon', 'bread_egg_salad', 'bread_bacon_egg_pie'],
+  mega_box: ['bread_mushroom', 'bread_shokupan', 'bread_petit_cheese'],
+  speed_up: ['bread_negi', 'bread_croissant', 'bread_petit_roll', 'bread_wiener_croissant', 'bread_ginger_burger'],
+  time: ['bread_melon', 'bread_pumpkin', 'bread_sweet_potato', 'bread_apple_danish',
+    'bread_sweet_potato_montblanc', 'bread_cinnamon_apple', 'bread_pumpkin_bun',
+    'bread_lemon', 'bread_fruit_cheese'],
+  shield: ['bread_potato', 'bread_raisin_shokupan', 'bread_curry'],
+  slow_fall: ['bread_gratin', 'bread_frog_matcha', 'bread_broccoli_pizza'],
+  combo: ['bread_burger', 'bread_tomato', 'bread_cheese_corn', 'bread_corn_mayo',
+    'bread_yakisoba', 'bread_mexican', 'bread_shrimp_avocado', 'bread_tuna',
+    'bread_fish_burger', 'bread_teriyaki_burger', 'bread_cheese_burger'],
+  bonus: ['bread_cream', 'bread_cocoa', 'bread_chocolate', 'bread_petit_an',
+    'bread_choco_danish', 'bread_koshian', 'bread_choco_cream', 'bread_nandai_raisin',
+    'bread_raisin_caramel_danish', 'bread_salt_anko', 'bread_panda_choco'],
+  jackpot: ['bread_gold'],
+  burnt: ['bread_burnt']
+};
+for (const [power, keys] of Object.entries(BREAD_POWER_GROUPS)) {
+  for (const key of keys) BREAD_TYPES[key].power = power;
+}
+
 const CATCH_BREAD_ASSET_ROOT = new URL('models/catch_breads/', document.currentScript.src);
 const CATCH_BREAD_ASSET_VERSION = '20261109allmenu';
 
@@ -71,7 +94,13 @@ const breadPowerNotes = {
   fever: '8秒間、得点2倍',
   mega_box: '8秒間、木箱が大きくなる',
   speed_up: '8秒間、移動が速くなる',
-  burnt: 'コンボとフィーバーが終了'
+  time: '残り時間+1秒（合計+8秒まで）',
+  shield: '次のコゲパンを1回防ぐ',
+  slow_fall: '6秒間、パンがゆっくり落ちる',
+  combo: 'コンボが2つ進む',
+  bonus: 'おまけの純利益+¥60',
+  jackpot: '1個で¥1,000の高得点',
+  burnt: 'コンボとフィーバーが終了。お守りで防げる'
 };
 
 for (const catalog of document.querySelectorAll('.catch-bread-grid')) {

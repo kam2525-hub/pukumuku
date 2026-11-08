@@ -369,8 +369,12 @@ let gameState = {
   combo: 0,
   isFever: false,
   feverTimer: 0,
+  feverCooldownTimer: 0,
   megaBoxTimer: 0,
   speedTimer: 0,
+  slowFallTimer: 0,
+  shieldCount: 0,
+  timeBonusUsed: 0,
   breadCount: Object.fromEntries(Object.keys(BREAD_TYPES).map(key => [key, 0])),
   playerX: 0,
   targetX: 0,
@@ -897,8 +901,8 @@ let spawnTimer = 0;
 function chooseBreadType() {
   if (gameState.isFever) {
     // フィーバー中はお邪魔コゲパンは一切出ない！
-    // 35%の確率で「金のパン」、残り65%は全種類の美味しいパンが色とりどりに降り注ぐ！
-    if (Math.random() < 0.35) {
+    // 金パンはフィーバー中だけ少し出やすくする。
+    if (Math.random() < 0.18) {
       return 'bread_gold';
     }
     const feverBreads = Object.keys(BREAD_TYPES).filter(key =>
@@ -954,7 +958,7 @@ function showScorePopup(x, y, text, color = '#D34600') {
   pop.className = 'catch-popup';
   pop.innerText = text;
   pop.style.color = color;
-  pop.style.left = `${Math.max(8, Math.min(x, container.clientWidth - 190))}px`;
+  pop.style.left = `${Math.max(8, Math.min(x, container.clientWidth - Math.min(220, container.clientWidth * .55) - 8))}px`;
   pop.style.top = `${y}px`;
   popupContainer.appendChild(pop);
   setTimeout(() => pop.remove(), 850);
@@ -1031,6 +1035,26 @@ const resultScreen = document.getElementById('result-screen');
 const finalScoreText = document.getElementById('final-score-text');
 const rankBadge = document.getElementById('rank-badge');
 const breadStats = document.getElementById('bread-stats');
+const effectStatus = document.getElementById('effect-status');
+let lastEffectStatus = '';
+
+function updateEffectStatus() {
+  const effects = [];
+  if (gameState.isFever) effects.push(`🔥 2倍 ${Math.ceil(gameState.feverTimer)}秒`);
+  if (gameState.megaBoxTimer > 0) effects.push(`🍄 大きな箱 ${Math.ceil(gameState.megaBoxTimer)}秒`);
+  if (gameState.speedTimer > 0) effects.push(`💨 快速 ${Math.ceil(gameState.speedTimer)}秒`);
+  if (gameState.slowFallTimer > 0) effects.push(`🪶 ゆっくり ${Math.ceil(gameState.slowFallTimer)}秒`);
+  if (gameState.shieldCount > 0) effects.push('🛡️ コゲ防止 1回');
+  const status = effects.join('|');
+  if (status === lastEffectStatus) return;
+  lastEffectStatus = status;
+  effectStatus.replaceChildren(...effects.map(label => {
+    const chip = document.createElement('span');
+    chip.className = 'effect-chip';
+    chip.textContent = label;
+    return chip;
+  }));
+}
 
 function updateScoreUI() {
   scoreText.innerText = gameState.score.toLocaleString();
@@ -1065,9 +1089,12 @@ function animate() {
         gameState.feverTimer -= delta;
         if (gameState.feverTimer <= 0) {
           gameState.isFever = false;
+          gameState.combo = 0;
+          gameState.feverCooldownTimer = 5;
           sounds.setFever(false);
         }
       }
+      if (gameState.feverCooldownTimer > 0) gameState.feverCooldownTimer -= delta;
       if (gameState.megaBoxTimer > 0) {
         gameState.megaBoxTimer -= delta;
         if (junBreadBox) {
@@ -1079,6 +1106,10 @@ function animate() {
       if (gameState.speedTimer > 0) {
         gameState.speedTimer -= delta;
       }
+      if (gameState.slowFallTimer > 0) {
+        gameState.slowFallTimer -= delta;
+      }
+      updateEffectStatus();
 
       // キーボード入力
       handleKeyboardInput(delta);
@@ -1185,7 +1216,7 @@ function animate() {
       // 落ちてくるパンの更新 & キャッチ判定
       for (let i = activeBreads.length - 1; i >= 0; i--) {
         const b = activeBreads[i];
-        b.mesh.position.y -= b.speed * delta;
+        b.mesh.position.y -= b.speed * delta * (gameState.slowFallTimer > 0 ? 0.68 : 1);
         b.mesh.rotation.x += b.rotSpeedX * delta;
         b.mesh.rotation.y += b.rotSpeedY * delta;
         b.mesh.position.x += Math.sin(clock.getElapsedTime() * 3 + b.wobblePhase) * 0.01;
@@ -1204,66 +1235,73 @@ function animate() {
           const screenX = (screenPos.x * 0.5 + 0.5) * container.clientWidth;
           const screenY = (-(screenPos.y * 0.5) + 0.5) * container.clientHeight;
 
-          const scoreMul = gameState.isFever ? 2 : 1;
-          const gainedScore = b.def.score * scoreMul;
-
-          if (b.type === 'bread_burnt') {
-            // お邪魔コゲパン：-100点、コンボリセット、フィーバー解除
+          const power = b.def.power;
+          if (power === 'burnt') {
             sounds.playBurnt();
-            sounds.setFever(false);
-            gameState.score = Math.max(0, gameState.score - 100);
-            updateScoreUI();
-            showScorePopup(screenX - 45, screenY, "⚠️ コゲパン! -¥100", "#D50000");
-            gameState.combo = 0;
-            gameState.isFever = false;
-          } else if (b.type === 'bread_egg') {
-            // たまごパン：とろ〜りフィーバー発動（8秒間スコア2倍）
-            sounds.playCatch(gameState.combo);
-            gameState.score += gainedScore;
-            updateScoreUI();
-            gameState.combo++;
-            addBreadToTower(b.type);
-            gameState.isFever = true;
-            gameState.feverTimer = 8.0;
-            sounds.playFever();
-            sounds.setFever(true);
-            showScorePopup(screenX - 45, screenY, `🍳 とろ〜りフィーバー! +¥${gainedScore}`, "#FF9800");
-          } else if (b.type === 'bread_mushroom') {
-            // きのこパン：メガトレイ発動（8秒間木箱巨大化＆キャッチ判定拡大）
-            sounds.playCatch(gameState.combo);
-            gameState.score += gainedScore;
-            updateScoreUI();
-            gameState.combo++;
-            addBreadToTower(b.type);
-            gameState.megaBoxTimer = 8.0;
-            showScorePopup(screenX - 45, screenY, `🍄 メガトレイ発動! +¥${gainedScore}`, "#4CAF50");
-          } else if (b.type === 'bread_negi') {
-            // ねぎパン：シャキシャキダッシュ発動（8秒間移動速度アップ）
-            sounds.playCatch(gameState.combo);
-            gameState.score += gainedScore;
-            updateScoreUI();
-            gameState.combo++;
-            addBreadToTower(b.type);
-            gameState.speedTimer = 8.0;
-            showScorePopup(screenX - 45, screenY, `🧅 シャキシャキダッシュ! +¥${gainedScore}`, "#009688");
-          } else if (b.type === 'bread_gold') {
-            sounds.playGoldCatch();
-            gameState.score += gainedScore;
-            updateScoreUI();
-            showScorePopup(screenX - 40, screenY, `✨ ${b.def.name} +¥${gainedScore}`, "#E65100");
-            gameState.combo++;
-            addBreadToTower(b.type);
+            if (gameState.shieldCount > 0) {
+              gameState.shieldCount--;
+              showScorePopup(screenX - 60, screenY, '🛡️ コゲパンを防いだ！', '#267d46');
+            } else {
+              sounds.setFever(false);
+              gameState.score = Math.max(0, gameState.score - 100);
+              gameState.combo = 0;
+              gameState.isFever = false;
+              gameState.feverTimer = 0;
+              updateScoreUI();
+              showScorePopup(screenX - 60, screenY, '⚠️ コゲパン -¥100', '#D50000');
+            }
           } else {
-            sounds.playCatch(gameState.combo);
+            const scoreMul = gameState.isFever ? 2 : 1;
+            const gainedScore = b.def.score * scoreMul + (power === 'bonus' ? 60 : 0);
+            if (power === 'jackpot') sounds.playGoldCatch();
+            else sounds.playCatch(gameState.combo);
             gameState.score += gainedScore;
-            updateScoreUI();
-            showScorePopup(screenX - 30, screenY, `${b.def.name} +¥${gainedScore}`, "#D34600");
-            gameState.combo++;
+            gameState.combo += power === 'combo' ? 2 : 1;
             addBreadToTower(b.type);
+            let effectText = '';
+            switch (power) {
+              case 'fever':
+                gameState.isFever = true;
+                gameState.feverTimer = 8;
+                sounds.playFever();
+                sounds.setFever(true);
+                effectText = '🔥 得点2倍';
+                break;
+              case 'mega_box':
+                gameState.megaBoxTimer = 8;
+                effectText = '🍄 箱が大きくなる';
+                break;
+              case 'speed_up':
+                gameState.speedTimer = 8;
+                effectText = '💨 移動が速くなる';
+                break;
+              case 'time':
+                if (gameState.timeBonusUsed < 8) {
+                  gameState.timeLeft += 1;
+                  gameState.timeBonusUsed++;
+                  effectText = '⏱️ 残り+1秒';
+                  updateTimerUI();
+                } else effectText = '⏱️ 延長上限';
+                break;
+              case 'shield':
+                gameState.shieldCount = 1;
+                effectText = '🛡️ コゲを1回防ぐ';
+                break;
+              case 'slow_fall':
+                gameState.slowFallTimer = 6;
+                effectText = '🪶 落下がゆっくり';
+                break;
+              case 'combo': effectText = '🔗 コンボ+2'; break;
+              case 'bonus': effectText = '✨ おまけ+¥60'; break;
+              case 'jackpot': effectText = '✨ 大当たり！'; break;
+            }
+            updateScoreUI();
+            showScorePopup(screenX - 70, screenY, `${b.def.name} +¥${gainedScore}\n${effectText}`, '#D34600');
           }
+          updateEffectStatus();
 
           // コンボ5回でフィーバー！
-          if (gameState.combo >= 5 && !gameState.isFever) {
+          if (gameState.combo >= 8 && !gameState.isFever && gameState.feverCooldownTimer <= 0) {
             gameState.isFever = true;
             gameState.feverTimer = 8.0;
             sounds.playFever();
@@ -1364,6 +1402,16 @@ function startGame() {
   gameState.timeLeft = GAME_CONFIG.duration;
   gameState.combo = 0;
   gameState.isFever = false;
+  gameState.feverTimer = 0;
+  gameState.feverCooldownTimer = 0;
+  gameState.megaBoxTimer = 0;
+  gameState.speedTimer = 0;
+  gameState.slowFallTimer = 0;
+  gameState.shieldCount = 0;
+  gameState.timeBonusUsed = 0;
+  spawnTimer = 0;
+  lastEffectStatus = 'reset';
+  updateEffectStatus();
   gameState.breadCount = Object.fromEntries(Object.keys(BREAD_TYPES).map(key => [key, 0]));
   updateScoreUI();
   updateTimerUI();
