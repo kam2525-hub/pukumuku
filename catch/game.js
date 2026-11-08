@@ -720,6 +720,7 @@ loader.load(`../models/pukumuku_blender_shop.glb?${CACHE_BUST}`, (gltf) => {
 // 純くんの木箱メッシュ参照と、地面に置く木箱
 let junBreadBox = null;
 let groundBasket = null;
+const trayFloorWorld = new THREE.Vector3();
 
 function spawnGroundBasket(x, y = 0.045, z = 0.15) {
   if (!groundBasket) {
@@ -754,7 +755,13 @@ loader.load(`../models/jun_kun_carry_box.glb?${CACHE_BUST}`, (gltf) => {
       child.castShadow = true;
       child.receiveShadow = true;
       // 木箱メッシュの特定
-      if (child.name.includes('Bread') || child.name.includes('Box') || child.name.includes('Basket') || child.name.includes('立方体.004')) {
+      if (child.name === 'Bread_Carry_Box') {
+        // 箱の内底を原点にして、巨大化しても手元から浮かないようにする。
+        const floor = new THREE.Vector3(0, 0.56, 0.25);
+        child.geometry = child.geometry.clone();
+        child.geometry.translate(-floor.x, -floor.y, -floor.z);
+        child.position.add(floor.applyQuaternion(child.quaternion));
+        child.position.y -= 0.06;
         junBreadBox = child;
       }
     }
@@ -955,7 +962,7 @@ function showScorePopup(x, y, text, color = '#D34600') {
 }
 
 function addBreadToTower(typeKey) {
-  if (!junKun) return;
+  if (!junBreadBox) return;
   const template = breadTemplates[typeKey];
   if (!template) return;
 
@@ -985,8 +992,8 @@ function addBreadToTower(typeKey) {
 
   const idx = gameState.towerBreads.length;
   // 純くんが抱える木箱の中にすっぽり収まり、順番に上に積み重なる！
-  const h = 0.36 + idx * 0.07;
-  towerItem.position.set(gameState.playerX, h, 0.15);
+  junBreadBox.localToWorld(towerItem.position.set(0, 0, 0));
+  towerItem.position.y += 0.035 + idx * 0.07;
   scene.add(towerItem);
 
   gameState.towerBreads.push(towerItem);
@@ -1154,14 +1161,16 @@ function animate() {
           junKunGroup.rotation.y += (0 - junKunGroup.rotation.y) * 10 * delta;
         }
 
-        // 木箱の中のパンを純くんの移動に追従＆可愛く揺らす（ゲーム中のみ）
-        gameState.towerBreads.forEach((bread, idx) => {
-          bread.position.x = gameState.playerX;
-          bread.position.y = 0.36 + idx * 0.07;
-          bread.position.z = 0.15;
-          bread.rotation.z = Math.sin(clock.getElapsedTime() * 4 + idx) * 0.05;
-          bread.rotation.y = idx * 0.2;
-        });
+        // アニメーション中もパンを木箱の内底に追従させる。
+        if (gameState.towerBreads.length > 0) {
+          junBreadBox.localToWorld(trayFloorWorld.set(0, 0, 0));
+          gameState.towerBreads.forEach((bread, idx) => {
+            bread.position.copy(trayFloorWorld);
+            bread.position.y += 0.035 + idx * 0.07;
+            bread.rotation.z = Math.sin(clock.getElapsedTime() * 4 + idx) * 0.05;
+            bread.rotation.y = idx * 0.2;
+          });
+        }
       }
     }
 
