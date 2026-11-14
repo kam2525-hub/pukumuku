@@ -497,15 +497,17 @@ function spawnObstacleItem(lane, z, forceDef = null) {
 function spawnWave() {
   const spawnZ = -60;
 
-  // フィーバー中は障害物なし・全レーンに豪華パンの列！
+  // フィーバー中も障害物を残しつつ、控えめなボーナスパターンにする
   if (game.feverTimer > 0) {
+    const obsLane = Math.floor(Math.random() * 3);
+    spawnObstacleItem(obsLane, spawnZ, OBSTACLE_DEFS[Math.floor(Math.random() * OBSTACLE_DEFS.length)]);
     for (let l = 0; l < 3; l++) {
-      for (let k = 0; k < 3; k++) {
-        const key = (k === 1 && l === 1) ? 'bread_gold' : PICKUP_KEYS[Math.floor(Math.random() * PICKUP_KEYS.length)];
-        spawnBreadItem(l, spawnZ - k * 2.4, 0.72, key);
+      if (l === obsLane) continue;
+      for (let k = 0; k < 2; k++) {
+        spawnBreadItem(l, spawnZ - k * 2.2, 0.72);
       }
     }
-    return 11.5;
+    return 10.5;
   }
 
   const d = game.distance;
@@ -659,7 +661,7 @@ function updateHUD() {
   const fBar = document.getElementById('fever-bar-fill');
   const fLabel = document.getElementById('fever-label');
   if (game.feverTimer > 0) {
-    fBar.style.width = `${(game.feverTimer / 7.0) * 100}%`;
+    fBar.style.width = `${(game.feverTimer / 3.5) * 100}%`;
     fLabel.textContent = `🔥 FEVER! ${Math.ceil(game.feverTimer)}s`;
   } else {
     fBar.style.width = `${Math.min(100, game.feverGauge)}%`;
@@ -836,7 +838,7 @@ function animate() {
   if (game.running) {
     // 速度曲線（最初は走りやすく、距離に応じてどんどん高速化）
     const baseSpeed = Math.min(28.0, 12.5 + game.distance * 0.015);
-    const boostMul = (game.dashBoostTimer > 0 || game.feverTimer > 0) ? 1.38 : 1.0;
+    const boostMul = game.dashBoostTimer > 0 ? 1.35 : (game.feverTimer > 0 ? 1.18 : 1.0);
     game.speed = baseSpeed * boostMul;
     const moveStep = game.speed * dt;
     game.distance += moveStep;
@@ -925,15 +927,10 @@ function animate() {
       b.phase += dt * 4.5;
       b.mesh.position.y = b.yBase + Math.sin(b.phase) * 0.08;
 
-      // マグネットまたはフィーバー時は吸い寄せ！（マグネットは控えめな範囲・強さに調整）
-      if (b.key !== 'bread_burnt') {
-        if (game.feverTimer > 0 && b.mesh.position.z > -11 && b.mesh.position.z < 2) {
-          b.mesh.position.x += (game.playerX - b.mesh.position.x) * Math.min(1, dt * 10);
-          b.yBase += (game.playerY + 0.65 - b.yBase) * Math.min(1, dt * 10);
-        } else if (game.magnetTimer > 0 && b.mesh.position.z > -7.5 && b.mesh.position.z < 1.5) {
-          b.mesh.position.x += (game.playerX - b.mesh.position.x) * Math.min(1, dt * 6.5);
-          b.yBase += (game.playerY + 0.65 - b.yBase) * Math.min(1, dt * 6.5);
-        }
+      // マグネット時のみ控えめに吸い寄せ！（フィーバー時の自動吸引は廃止）
+      if (b.key !== 'bread_burnt' && game.magnetTimer > 0 && b.mesh.position.z > -7.5 && b.mesh.position.z < 1.5) {
+        b.mesh.position.x += (game.playerX - b.mesh.position.x) * Math.min(1, dt * 6.5);
+        b.yBase += (game.playerY + 0.65 - b.yBase) * Math.min(1, dt * 6.5);
       }
 
       const dx = Math.abs(b.mesh.position.x - game.playerX);
@@ -957,17 +954,17 @@ function animate() {
           game.maxCombo = Math.max(game.maxCombo, game.combo);
           game.breadsCollected++;
 
-          const mul = (game.doubleTimer > 0 ? 2 : 1) * (game.feverTimer > 0 ? 2 : 1);
-          const pts = (b.def.score || 250) * mul;
+          const mul = (game.doubleTimer > 0 ? 2 : 1) * (game.feverTimer > 0 ? 1.5 : 1);
+          const pts = Math.round((b.def.score || 250) * mul);
           game.score += pts;
           addMiniBreadToBox(b.key);
 
-          // フィーバーゲージ上昇
+          // フィーバーゲージ上昇（溜まりすぎないよう控えめに）
           if (game.feverTimer <= 0) {
-            game.feverGauge += (b.key === 'bread_gold' ? 25 : 6);
+            game.feverGauge += (b.key === 'bread_gold' ? 12 : 3.5);
             if (game.feverGauge >= 100) {
               game.feverGauge = 0;
-              game.feverTimer = 5.5;
+              game.feverTimer = 3.5;
               sounds.isFever = true;
               sounds.playFever();
               flashScreen('#FFD54F');
