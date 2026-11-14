@@ -511,12 +511,14 @@ let junKunMixer = null;
 let junKunAnimations = {};
 let junKunCurrentAction = null;
 let junKunStool = null;
+let junWalkway = null;
 let junBodyNode = null;
 let junLegL = null;
 let junLegR = null;
 const junKunBaseY = 0.30; // スツール上面Y座標にピッタリ接地
 let junHopTime = 0;
 let junSpinTime = 0; // 360度ハッピースピン時間
+let junDropTime = 0;
 
 // GLBモデルキャッシュ（中央補正済みテンプレート）
 const loadedGLBModels = {};
@@ -604,10 +606,8 @@ function initGame() {
   // 6. テーブルとお皿の作成
   createTableAndPlate();
   // ※ユーザー要望により後ろのプクムク店舗背景は削除し、清潔でシンプルなスタジオ背景に
-  createTongModel();
-
-  // 7. 純くん専用の独立小台 & 純くん（3Dキャラクター）の読み込み
-  createJunKunStool();
+  // 7. 純くんが作業台の上を移動して具材を落とす
+  createJunWalkway();
   loadJunKun();
 
   // 8. 全10種類具材GLBモデルの非同期先読み＆原点中央補正
@@ -680,6 +680,25 @@ function createJunKunStool() {
   junKunStool.receiveShadow = true;
   junKunStool.castShadow = true;
   scene.add(junKunStool);
+}
+
+// タワーに合わせて上昇する小さな作業台。純くんの足元だけを支え、具材の落下は妨げない。
+function createJunWalkway() {
+  junWalkway = new THREE.Group();
+  const deck = new THREE.Mesh(
+    new THREE.BoxGeometry(2.12, 0.055, 0.28),
+    new THREE.MeshStandardMaterial({ color: 0xE86A20, roughness: 0.58 })
+  );
+  deck.position.z = -0.32;
+  deck.castShadow = true;
+  junWalkway.add(deck);
+  const trim = new THREE.Mesh(
+    new THREE.BoxGeometry(2.12, 0.018, 0.035),
+    new THREE.MeshStandardMaterial({ color: 0xF7C949, roughness: 0.48 })
+  );
+  trim.position.set(0, 0.034, -0.16);
+  junWalkway.add(trim);
+  scene.add(junWalkway);
 }
 
 // 全具材GLBモデルの先読み＆Box3中央補正（ロード完了時に保持具材を即座にリアルモデルへ差し替え）
@@ -802,12 +821,12 @@ function loadJunKun() {
   gltfLoader.load(`${MODELS_BASE}jun_kun_carry_box.glb`, (gltf) => {
     junKun = gltf.scene;
     window.junKun = junKun;
-    junKun.rotation.set(0, 0.55, 0); // お皿とタワーを見つめる角度
-    const scale = 0.48; // 存在感たっぷりで元気な動きがはっきり見えるサイズ！
+    junKun.rotation.set(0, 0.25, 0); // 顔をカメラ側へ向ける
+    const scale = 0.62;
     junKun.scale.set(scale, scale, scale);
     
     // 足裏（実測 Y=0.0）をスツール上面（Y=0.30）にピッタリ合わせる！
-    junKun.position.set(-0.62, junKunBaseY, 1.22);
+    junKun.position.set(-0.43, highestY + TONG_HEIGHT_OFFSET - 0.26, -0.12);
 
     junKun.traverse((child) => {
       if (child.name === 'Body') junBodyNode = child;
@@ -842,7 +861,7 @@ function loadJunKun() {
     });
 
     // 初期ポーズ: 手を振って元気にスタンバイ
-    playJunKunAnimation(junKunAnimations['Wave'] ? 'Wave' : 'Carry_Idle', 0.2);
+    playJunKunAnimation('Carry_Idle', 0.2);
   }, undefined, (err) => console.warn('Jun-kun load error:', err));
 }
 
@@ -1302,9 +1321,8 @@ function triggerFinishTopBun() {
   currentHeldMesh = createIngredientMesh(currentHeldDef);
   scene.add(currentHeldMesh);
 
-  // トングが外側からパッと開いて上バンズをキュッと掴み直す演出！
-  currentTongOpen = 1.0;
-  targetTongOpen = 0.0;
+  // 仕上げのパンを純くんの手元に持ち替える
+  playJunKunAnimation('Carry_Idle', 0.12);
 
   showToast('👑 仕上げの特製上バンズ！乗せて完成するとスコア2倍(×2)！', 'good');
   triggerJunReaction('big_success');
@@ -1374,9 +1392,7 @@ function prepareNextItem() {
   isDropping = false;
   currentDroppingItem = null; // 装填完了したので投下中ロックを解除
 
-  // ★トングが開いた状態(0.95)から新しい具材を外側からキュッと挟み込む(0.0)ことで開閉動作が常にくっきり見える！
-  currentTongOpen = 0.95;
-  targetTongOpen = 0.0;
+  if (junKun && junDropTime <= 0) playJunKunAnimation('Carry_Idle', 0.15);
 
   updateFinishBunButtonUI();
 }
@@ -1387,9 +1403,8 @@ function dropCurrentItem() {
   if (performance.now() - gameStartTime < 450) return;
 
   isDropping = true;
-  currentTongOpen = 1.0; // ★投下した瞬間に即座にパカッと大きく開く！
-  targetTongOpen = 1.0;
-  tongRecoilY = 0.14; // トングがキュッと上に跳ね上がるリコイル演出
+  junDropTime = 0.42;
+  playJunKunAnimation('Wave', 0.07, false);
   sounds.playDrop();
 
   const def = currentHeldDef;
@@ -2203,18 +2218,12 @@ function animate() {
     window.tongX = Math.sin(tongSwingTime) * TONG_SWING_AMPLITUDE;
   }
 
-  // 3. トングメッシュと保持中具材の同期（先端が具材をつかむ隙間0.02、投下時はtongRecoilYで軽快に跳ね上がる）
+  // 3. 純くんと手元の具材を同じ位置へ移動する
   const itemHoldY = highestY + TONG_HEIGHT_OFFSET;
-  const tongBaseY = getTongVisualPlacementY(highestY, currentHeldDef) + tongRecoilY;
-  if (tongMeshGroup) {
-    tongMeshGroup.position.set(window.tongX, tongBaseY, 0);
-  }
   if (currentHeldMesh) {
     currentHeldMesh.position.set(window.tongX, itemHoldY, 0);
   }
-
-  // トング開閉アニメーション更新
-  updateTongAnimation(delta);
+  if (junWalkway) junWalkway.position.y = itemHoldY - 0.30;
 
   // 3b. 落下した各具材のメッシュと剛体の同期 & 着地時のぷるん弾力（Squash & Stretch）
   activeItems.forEach(item => {
@@ -2241,7 +2250,7 @@ function animate() {
     rebuildValidTower(delta);
   }
 
-  // 5. ★純くんの全身ダイナミックアクション（左右ステップ移動・体スウェイ・交互足踏み・360度スピン・大ジャンプ）
+  // 5. 純くんが具材を運び、落とした瞬間に手を動かす
   if (junKunMixer) {
     junKunMixer.update(delta);
   }
@@ -2250,12 +2259,11 @@ function animate() {
     // コンボや段数が増えるほど応援テンポがノリノリに！
     const danceFreq = 5.5 + Math.min(4.0, stackedCount * 0.35);
 
-    // A. スツールの上でトングに合わせて左右にチョコチョコ元気よくステップ移動！
-    const stepWalkX = Math.sin(nowSec * danceFreq * 0.5) * 0.045 + window.tongX * 0.06;
-    junKun.position.x = -0.62 + stepWalkX;
+    const stepWalkX = Math.sin(nowSec * danceFreq * 0.5) * 0.012;
+    junKun.position.x = window.tongX - 0.43 + stepWalkX;
 
     // B. スイング追従 ＋ 360度ハッピースピン！
-    const baseRotY = 0.55 + window.tongX * 0.32 + Math.sin(nowSec * danceFreq * 0.5) * 0.14;
+    const baseRotY = 0.25 + Math.sin(nowSec * danceFreq * 0.5) * 0.05;
     if (junSpinTime > 0) {
       junSpinTime = Math.max(0, junSpinTime - delta);
       const spinAngle = (1.0 - (junSpinTime / 0.68)) * Math.PI * 2.0;
@@ -2265,16 +2273,11 @@ function animate() {
     }
 
     // C. 体を左右に可愛く揺らすダンススウェイ（Z軸傾き）
-    const targetRotZ = Math.sin(nowSec * danceFreq) * 0.11 - window.tongX * 0.08;
+    const targetRotZ = Math.sin(nowSec * danceFreq) * 0.035 + (junDropTime > 0 ? -0.16 * Math.sin((junDropTime / 0.42) * Math.PI) : 0);
     junKun.rotation.z += (targetRotZ - junKun.rotation.z) * Math.min(1.0, delta * 10.0);
 
-    // D. タワーの見上げ & 投下時の注視
-    if (isDropping) {
-      junKun.rotation.x += (0.12 - junKun.rotation.x) * Math.min(1.0, delta * 8.0);
-    } else {
-      const lookUpAngle = -Math.min(0.24, Math.max(0, highestY - 0.64) * 0.05);
-      junKun.rotation.x += (lookUpAngle - junKun.rotation.x) * Math.min(1.0, delta * 5.0);
-    }
+    // 投下時は具材を見下ろす
+    junKun.rotation.x += ((junDropTime > 0 ? 0.12 : 0.02) - junKun.rotation.x) * Math.min(1.0, delta * 8.0);
 
     // E. 脚ボーン（Leg_L / Leg_R）のパタパタ交互ステップ＆胴体ツイスト！
     // ※GLB内の脚ボーンは初期ポーズが rotation.x = -Math.PI（下向き）なので、-Math.PI を基準に揺らす！
@@ -2287,14 +2290,21 @@ function animate() {
       junBodyNode.rotation.y = Math.sin(nowSec * danceFreq) * 0.15;
     }
 
-    // F. リズミカルな応援バウンス ＋ ジャンプリアクション！
+    // F. リズミカルなバウンス ＋ ジャンプリアクション！
     const rhythmBounce = Math.abs(Math.sin(nowSec * danceFreq)) * 0.032;
+    const carrierY = highestY + TONG_HEIGHT_OFFSET - 0.26;
     if (junHopTime > 0) {
       junHopTime = Math.max(0, junHopTime - delta);
       const hopOffset = Math.sin(Math.min(1.0, junHopTime / 0.48) * Math.PI) * 0.22;
-      junKun.position.y = junKunBaseY + Math.max(rhythmBounce, hopOffset);
+      junKun.position.y = carrierY + Math.max(rhythmBounce, hopOffset);
     } else {
-      junKun.position.y = junKunBaseY + rhythmBounce;
+      junKun.position.y = carrierY + rhythmBounce;
+    }
+    if (junDropTime > 0) {
+      junDropTime = Math.max(0, junDropTime - delta);
+      if (junDropTime === 0 && junKunCurrentAction === junKunAnimations['Wave']) {
+        playJunKunAnimation('Carry_Idle', 0.14);
+      }
     }
   }
 
@@ -2317,15 +2327,14 @@ function updateSmartCamera(delta) {
   // 1. 全表示対象の3D境界（Box3）の算出
   const effectiveTopY = (diagnosticSimulatedHeight !== null) ? diagnosticSimulatedHeight : highestY;
   const currentDef = currentHeldDef || INGREDIENTS_DEF[0];
-  const tongBaseY = getTongVisualPlacementY(effectiveTopY, currentDef);
-  const tongTopY = tongBaseY + 1.34; // トング上端（実測1.34）
+  const junTopY = effectiveTopY + TONG_HEIGHT_OFFSET + 0.85;
 
   // 画面内に常に見えるべき3D境界範囲:
   // - 下端 Ymin: 0.0 (純くんの足元スツール底面、テーブル天板)
   // - 上端 Ymax: tongTopY (トング上端)
   // - 水平 X: 純くん左端 (-0.80) 〜 お皿右端 (+1.35) ＋ トング移動余裕 (±1.10) => 幅2.70
   const yMin = 0.0;
-  const yMax = tongTopY;
+  const yMax = junTopY;
   const boxHeight = Math.max(2.6, yMax - yMin);
   const boxWidth = 2.70;
 
@@ -2388,19 +2397,18 @@ window.getProjectedBounds = function() {
   const effectiveTopY = (diagnosticSimulatedHeight !== null) ? diagnosticSimulatedHeight : highestY;
   const itemHoldY = effectiveTopY + TONG_HEIGHT_OFFSET;
   const currentDef = currentHeldDef || INGREDIENTS_DEF[0];
-  const tongBaseY = getTongVisualPlacementY(effectiveTopY, currentDef);
-  const tongTopY = tongBaseY + 1.34;
+  const junTopY = itemHoldY + 0.85;
 
   const keyPoints = {
     stoolBase: new THREE.Vector3(-0.62, 0.0, 1.22),
-    junHead: new THREE.Vector3(-0.62, 0.70, 1.22),
+    junHead: new THREE.Vector3(window.tongX - 0.43, junTopY, -0.12),
     plateLeft: new THREE.Vector3(-1.35, 0.33, 0),
     plateRight: new THREE.Vector3(1.35, 0.33, 0),
     plateFront: new THREE.Vector3(0, 0.33, 1.35),
     towerTop: new THREE.Vector3(0, effectiveTopY, 0),
     heldItem: new THREE.Vector3(window.tongX, itemHoldY, 0),
-    tongTip: new THREE.Vector3(window.tongX, tongBaseY + 0.04, 0),
-    tongTop: new THREE.Vector3(window.tongX, tongTopY, 0)
+    tongTip: new THREE.Vector3(window.tongX, itemHoldY, 0),
+    tongTop: new THREE.Vector3(window.tongX - 0.43, junTopY, -0.12)
   };
 
   const projected = {};

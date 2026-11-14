@@ -27,6 +27,7 @@ PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8766
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_FILE = os.path.join(BASE_DIR, 'ranking_data.json')
 TOWER_DATA_FILE = os.path.join(BASE_DIR, 'tower_ranking_data.json')
+DASH_DATA_FILE = os.path.join(BASE_DIR, 'dash_ranking_data.json')
 lock = threading.RLock()
 
 # 初期のプクムク常連さんランキング（にぎやかしデータ）
@@ -118,6 +119,49 @@ def save_tower_score(name, score, height):
             "heightRankPosition": height_pos
         }
 
+DEFAULT_DASH_RANKINGS = [
+    {"id": "d_init_1", "name": "プクムク店長", "score": 24500, "distance": 420, "date": "11/14 09:00"},
+    {"id": "d_init_2", "name": "早起きパン職人", "score": 18200, "distance": 340, "date": "11/14 09:15"},
+    {"id": "d_init_3", "name": "クロワッサン好き", "score": 14800, "distance": 280, "date": "11/14 09:30"},
+    {"id": "d_init_4", "name": "看板娘みく", "score": 11200, "distance": 210, "date": "11/14 10:00"},
+    {"id": "d_init_5", "name": "見習いコッペ", "score": 7500, "distance": 150, "date": "11/14 10:15"},
+]
+
+def load_dash_rankings():
+    with lock:
+        if not os.path.exists(DASH_DATA_FILE):
+            with open(DASH_DATA_FILE, 'w', encoding='utf-8') as f:
+                json.dump(DEFAULT_DASH_RANKINGS, f, ensure_ascii=False, indent=2)
+            return list(DEFAULT_DASH_RANKINGS)
+        try:
+            with open(DASH_DATA_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                return data if isinstance(data, list) else list(DEFAULT_DASH_RANKINGS)
+        except Exception:
+            return list(DEFAULT_DASH_RANKINGS)
+
+def save_dash_score(name, score, distance):
+    with lock:
+        rankings = load_dash_rankings()
+        now = datetime.now()
+        clean_name = html.escape(name.strip()) or "名無し職人"
+        clean_name = clean_name[:12]
+        entry_id = f"dash_{int(now.timestamp() * 1000)}"
+        new_entry = {
+            "id": entry_id,
+            "name": clean_name,
+            "score": int(score),
+            "distance": int(distance),
+            "date": now.strftime("%m/%d %H:%M")
+        }
+        rankings.append(new_entry)
+        rankings = rankings[-60:]
+        with open(DASH_DATA_FILE, 'w', encoding='utf-8') as f:
+            json.dump(rankings, f, ensure_ascii=False, indent=2)
+        by_score = deduplicate_by_name(rankings, lambda x: (x.get('score', 0), x.get('distance', 0)))
+        by_dist = deduplicate_by_name(rankings, lambda x: (x.get('distance', 0), x.get('score', 0)))
+        return {"scoreRankings": by_score[:10], "distRankings": by_dist[:10], "currentEntry": new_entry}
+
 def load_rankings():
     with lock:
         if not os.path.exists(DATA_FILE):
@@ -195,6 +239,23 @@ class BakeryRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
+        if self.path.startswith('/api/dash_ranking'):
+            rankings = load_dash_rankings()
+            by_score = deduplicate_by_name(rankings, lambda x: (x.get('score', 0), x.get('distance', 0)))[:10]
+            by_dist = deduplicate_by_name(rankings, lambda x: (x.get('distance', 0), x.get('score', 0)))[:10]
+            payload = json.dumps({
+                "status": "ok",
+                "scoreRankings": by_score,
+                "distRankings": by_dist
+            }, ensure_ascii=False).encode('utf-8')
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.send_header('Content-Length', str(len(payload)))
+            self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            self.end_headers()
+            self.wfile.write(payload)
+            return
+
         if self.path.startswith('/api/tower_ranking'):
             rankings = load_tower_rankings()
             by_score = deduplicate_by_name(rankings, lambda x: (x.get('score', 0), x.get('height', 0)))[:10]
@@ -228,6 +289,39 @@ class BakeryRequestHandler(http.server.SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_POST(self):
+        if self.path.startswith('/api/dash_ranking'):
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 10240:
+                self.send_response(413)
+                self.end_headers()
+                return
+            body = self.rfile.read(content_length)
+            try:
+                data = json.loads(body.decode('utf-8'))
+            except Exception:
+                self.send_response(400)
+                self.end_headers()
+                return
+
+            name = str(data.get('name', '名無し職人'))
+            try:
+                score = int(data.get('score', 0))
+            except (ValueError, TypeError):
+                score = 0
+            try:
+                distance = int(data.get('distance', 0))
+            except (ValueError, TypeError):
+                distance = 0
+            result = save_dash_score(name, max(0, min(9999999, score)), max(0, min(99999, distance)))
+            payload = json.dumps({"status": "ok", **result}, ensure_ascii=False).encode('utf-8')
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.send_header('Content-Length', str(len(payload)))
+            self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            self.end_headers()
+            self.wfile.write(payload)
+            return
+
         if self.path.startswith('/api/tower_ranking'):
             content_length = int(self.headers.get('Content-Length', 0))
             if content_length > 10240:
@@ -313,11 +407,15 @@ class BakeryRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
 
 
+class ThreadingBakeryServer(socketserver.ThreadingTCPServer):
+    allow_reuse_address = True
+    daemon_threads = True
+    request_queue_size = 64
+
 def run():
-    socketserver.TCPServer.allow_reuse_address = True
     # 静的ファイルルートを確実にスクリプトのあるディレクトリに固定
     os.chdir(BASE_DIR)
-    with socketserver.TCPServer(("", PORT), BakeryRequestHandler) as httpd:
+    with ThreadingBakeryServer(("", PORT), BakeryRequestHandler) as httpd:
         print(f"🍞 Bakery Server with Ranking API running on http://127.0.0.1:{PORT}")
         httpd.serve_forever()
 

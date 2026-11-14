@@ -171,6 +171,11 @@ body {
   border: 2px solid #E64A19;
 }
 
+.icon-dash {
+  background: linear-gradient(135deg, #B3E5FC, #4FC3F7);
+  border: 2px solid #0288D1;
+}
+
 .game-text {
   flex: 1;
 }
@@ -232,6 +237,12 @@ body {
   background: linear-gradient(180deg, #4CAF50, #2E7D32);
   border: 2px solid #1B5E20;
   box-shadow: 0 6px 16px rgba(46, 125, 50, 0.35);
+}
+
+.play-btn-blue {
+  background: linear-gradient(180deg, #29B6F6, #0277BD);
+  border: 2px solid #01579B;
+  box-shadow: 0 6px 16px rgba(2, 119, 189, 0.35);
 }
 
 .play-btn:active {
