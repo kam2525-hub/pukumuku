@@ -121,13 +121,15 @@ const LOCAL_DASH_API = '/api/dash_ranking';
 const LOCAL_DASH_KEY = 'pukumuku_bread_dash_rankings_v1';
 const PLAYER_NAME_KEY = 'pukumuku_player_name_v1';
 
-// 障害物定義 (Blender製GLB)
+// 障害物定義 (Blender製GLB 全7種)
 const OBSTACLE_DEFS = [
-  { key: 'obs_bread_crate', file: '../models/dash_props/obs_bread_crate.glb', scale: 1.05, hitHeight: 0.80, canJumpOver: true },
-  { key: 'obs_aframe_sign', file: '../models/dash_props/obs_aframe_sign.glb', scale: 1.05, hitHeight: 0.90, canJumpOver: true },
-  { key: 'obs_flour_spill', file: '../models/dash_props/obs_flour_spill.glb', scale: 1.15, hitHeight: 0.45, canJumpOver: true },
-  { key: 'obs_crow', file: '../models/dash_props/obs_crow.glb', scale: 1.15, hitHeight: 0.85, canJumpOver: true, isCrow: true },
-  { key: 'obs_delivery_cart', file: '../models/dash_props/obs_delivery_cart.glb', scale: 1.05, hitHeight: 2.25, canJumpOver: false }
+  { key: 'obs_bread_crate', file: '../models/dash_props/obs_bread_crate.glb', scale: 1.08, hitHeight: 0.80, canJumpOver: true },
+  { key: 'obs_aframe_sign', file: '../models/dash_props/obs_aframe_sign.glb', scale: 1.08, hitHeight: 0.90, canJumpOver: true },
+  { key: 'obs_traffic_cone', file: '../models/dash_props/obs_traffic_cone.glb', scale: 1.10, hitHeight: 0.68, canJumpOver: true },
+  { key: 'obs_flour_spill', file: '../models/dash_props/obs_flour_spill.glb', scale: 1.18, hitHeight: 0.45, canJumpOver: true },
+  { key: 'obs_crow', file: '../models/dash_props/obs_crow.glb', scale: 1.22, hitHeight: 0.85, canJumpOver: true, isCrow: true },
+  { key: 'obs_delivery_cart', file: '../models/dash_props/obs_delivery_cart.glb', scale: 1.08, hitHeight: 2.25, canJumpOver: false },
+  { key: 'obs_oven_rack', file: '../models/dash_props/obs_oven_rack.glb', scale: 1.08, hitHeight: 2.25, canJumpOver: false }
 ];
 
 // --- 3. Three.js シーン構築 ---
@@ -255,8 +257,8 @@ let houseTemplate = null;
 let lampTemplate = null;
 let pukumukuShopMesh = null;
 
-// 1) 純くんのロード
-gltfLoader.load('../models/jun_kun_carry_box.glb?v=20261114dash', (gltf) => {
+// 1) 純くんのロード（Blender製全力疾走＆ジャンプアニメーション内蔵）
+gltfLoader.load('../models/jun_kun_dash.glb?v=20261114dash2', (gltf) => {
   junKunModel = gltf.scene;
   const s = 0.62;
   junKunModel.scale.set(s, s, s);
@@ -506,53 +508,65 @@ function spawnWave() {
   }
 
   const pattern = Math.random();
+  const highDefs = OBSTACLE_DEFS.filter(d => !d.canJumpOver);
+  const lowDefs = OBSTACLE_DEFS.filter(d => d.canJumpOver && !d.isCrow);
+  const crowDef = OBSTACLE_DEFS.find(d => d.isCrow);
+  const densityGap = Math.max(7.2, 9.8 - game.distance * 0.005);
 
-  if (pattern < 0.35) {
-    // パターン1: 1〜2レーン障害物 + 空きレーンにパン3連
+  if (pattern < 0.25) {
+    // パターン1: ダブル高い壁（2レーンに背の高い棚/台車！残り1レーンのみ突破口）
     const safeLane = Math.floor(Math.random() * 3);
     for (let l = 0; l < 3; l++) {
       if (l === safeLane) {
         for (let k = 0; k < 3; k++) {
-          spawnBreadItem(l, spawnZ - k * 2.2, 0.65);
+          spawnBreadItem(l, spawnZ - k * 1.9, 0.68);
         }
-      } else if (Math.random() < 0.75) {
-        spawnObstacleItem(l, spawnZ);
+      } else {
+        spawnObstacleItem(l, spawnZ, highDefs[Math.floor(Math.random() * highDefs.length)]);
       }
     }
-    return 13.5;
-  } else if (pattern < 0.68) {
-    // パターン2: 低い障害物＋真上空中にボーナスパン（ジャンプ誘導！）
-    const jumpLane = Math.floor(Math.random() * 3);
-    const lowDefs = OBSTACLE_DEFS.filter(d => d.canJumpOver);
+    return densityGap;
+  } else if (pattern < 0.50) {
+    // パターン2: ジャンプ必須ゲート（全レーン低い障害物＋空中にボーナスパン）
+    const bonusLane = Math.floor(Math.random() * 3);
     for (let l = 0; l < 3; l++) {
-      if (l === jumpLane) {
-        spawnObstacleItem(l, spawnZ, lowDefs[Math.floor(Math.random() * lowDefs.length)]);
-        spawnBreadItem(l, spawnZ + 1.2, 1.45, PICKUP_KEYS[0]);
-        spawnBreadItem(l, spawnZ, 1.85, 'bread_gold');
-        spawnBreadItem(l, spawnZ - 1.2, 1.45, PICKUP_KEYS[1]);
-      } else if (Math.random() < 0.65) {
-        spawnObstacleItem(l, spawnZ);
+      spawnObstacleItem(l, spawnZ, lowDefs[Math.floor(Math.random() * lowDefs.length)]);
+      if (l === bonusLane) {
+        spawnBreadItem(l, spawnZ + 1.1, 1.45, PICKUP_KEYS[0]);
+        spawnBreadItem(l, spawnZ, 1.90, 'bread_gold');
+        spawnBreadItem(l, spawnZ - 1.1, 1.45, PICKUP_KEYS[1]);
       }
     }
-    return 14.5;
+    return densityGap + 0.8;
+  } else if (pattern < 0.75) {
+    // パターン3: ミックス配置（高い壁 + 低い障害物 + パン列）
+    const lanes = [0, 1, 2].sort(() => Math.random() - 0.5);
+    spawnObstacleItem(lanes[0], spawnZ, highDefs[Math.floor(Math.random() * highDefs.length)]);
+    spawnObstacleItem(lanes[1], spawnZ, lowDefs[Math.floor(Math.random() * lowDefs.length)]);
+    for (let k = 0; k < 3; k++) {
+      spawnBreadItem(lanes[2], spawnZ - k * 1.8, 0.68);
+    }
+    // パン列の後ろにも少しズラして低い障害物を置いてリズム感を出す！
+    if (game.distance > 60) {
+      spawnObstacleItem(lanes[2], spawnZ - 6.2, lowDefs[Math.floor(Math.random() * lowDefs.length)]);
+      return densityGap + 2.4;
+    }
+    return densityGap;
   } else {
-    // パターン3: 巨大台車（回避必須）＋ 隣接レーンにパン
-    const cartLane = Math.floor(Math.random() * 3);
-    const cartDef = OBSTACLE_DEFS.find(d => d.key === 'obs_delivery_cart');
-    spawnObstacleItem(cartLane, spawnZ, cartDef);
-
-    const otherLanes = [0, 1, 2].filter(l => l !== cartLane);
-    const breadLane = otherLanes[Math.floor(Math.random() * otherLanes.length)];
-    for (let k = 0; k < 4; k++) {
-      spawnBreadItem(breadLane, spawnZ - k * 2.1, 0.68);
+    // パターン4: カラス急襲 + 地上障害物
+    const safeLane = Math.floor(Math.random() * 3);
+    for (let l = 0; l < 3; l++) {
+      if (l === safeLane) {
+        for (let k = 0; k < 3; k++) {
+          spawnBreadItem(l, spawnZ - k * 1.9, 0.68);
+        }
+      } else if (Math.random() < 0.6 && crowDef) {
+        spawnObstacleItem(l, spawnZ - 3.0, crowDef);
+      } else {
+        spawnObstacleItem(l, spawnZ, OBSTACLE_DEFS[Math.floor(Math.random() * OBSTACLE_DEFS.length)]);
+      }
     }
-    // もう一つのレーンは50%で低い障害物
-    const thirdLane = otherLanes.find(l => l !== breadLane);
-    if (thirdLane !== undefined && Math.random() < 0.5) {
-      const lowDefs = OBSTACLE_DEFS.filter(d => d.canJumpOver);
-      spawnObstacleItem(thirdLane, spawnZ, lowDefs[Math.floor(Math.random() * lowDefs.length)]);
-    }
-    return 14.0;
+    return densityGap;
   }
 }
 
@@ -610,8 +624,9 @@ function moveLane(delta) {
 function doJump() {
   if (!game.running) return;
   if (game.isGrounded) {
-    game.vy = 10.6;
+    game.vy = 11.2;
     game.isGrounded = false;
+    switchJunAnim('Dash_Jump');
     sounds.playJump();
   }
 }
@@ -691,7 +706,7 @@ function startGame() {
   game.breadsCollected = 0;
   game.combo = 0;
   game.maxCombo = 0;
-  game.speed = 12.5;
+  game.speed = 15.5;
   game.invincibleTimer = 0;
   game.feverGauge = 0;
   game.feverTimer = 0;
@@ -699,7 +714,7 @@ function startGame() {
   game.magnetTimer = 0;
   game.dashBoostTimer = 0;
   game.shakeTimer = 0;
-  game.nextSpawnDist = 8;
+  game.nextSpawnDist = 4;
   game.lastRecordId = null;
 
   if (pukumukuShopMesh) {
@@ -715,7 +730,7 @@ function startGame() {
   hint.classList.add('show');
   setTimeout(() => hint.classList.remove('show'), 3600);
 
-  switchJunAnim('Carry_Run');
+  switchJunAnim('Dash_Run');
   sounds.isFever = false;
   sounds.startBGM();
   updateHUD();
@@ -757,8 +772,8 @@ function animate() {
   }
 
   if (game.running) {
-    // 速度曲線（距離に応じて徐々に爽快スピードアップ）
-    const baseSpeed = Math.min(23.5, 12.5 + game.distance * 0.011);
+    // 速度曲線（最初から爽快＆スリリングな高難易度加速）
+    const baseSpeed = Math.min(29.5, 15.5 + game.distance * 0.016);
     const boostMul = (game.dashBoostTimer > 0 || game.feverTimer > 0) ? 1.38 : 1.0;
     game.speed = baseSpeed * boostMul;
     const moveStep = game.speed * dt;
@@ -794,6 +809,7 @@ function animate() {
         game.playerY = 0;
         game.vy = 0;
         game.isGrounded = true;
+        switchJunAnim('Dash_Run');
       }
     }
 
@@ -939,7 +955,7 @@ function animate() {
         continue;
       }
 
-      o.mesh.position.z += moveStep;
+      o.mesh.position.z += moveStep + (o.def.isCrow ? 7.5 * dt : 0);
       if (o.def.isCrow) {
         o.phase += dt * 7.5;
         o.mesh.position.y = 0.35 + Math.sin(o.phase) * 0.14;
