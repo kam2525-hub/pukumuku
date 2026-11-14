@@ -434,16 +434,17 @@ function clearCarriedBreads() {
   carriedMiniBreads = [];
 }
 
-// --- 6. コースパターン自動生成（詰みゼロ設計） ---
-const PICKUP_KEYS = validBreadKeys.filter(k => k !== 'bread_burnt' && k !== 'bread_gold');
+// --- 6. コースパターン自動生成（詰みゼロ・序盤易→後半障害物ラッシュ設計） ---
+const SPECIAL_BREAD_KEYS = new Set(['bread_burnt', 'bread_gold', 'bread_egg', 'bread_mushroom', 'bread_negi']);
+const PICKUP_KEYS = validBreadKeys.filter(k => !SPECIAL_BREAD_KEYS.has(k));
 
 function pickRandomBreadKey() {
   const r = Math.random();
-  if (r < 0.07) return 'bread_gold';
-  if (r < 0.13) return 'bread_egg';
-  if (r < 0.19) return 'bread_mushroom';
-  if (r < 0.25) return 'bread_negi';
-  if (r < 0.31 && !game.feverTimer) return 'bread_burnt';
+  if (r < 0.045) return 'bread_gold';
+  if (r < 0.070) return 'bread_egg';
+  if (r < 0.085 && game.magnetTimer <= 0) return 'bread_mushroom';
+  if (r < 0.110) return 'bread_negi';
+  if (r < 0.170 && !game.feverTimer) return 'bread_burnt';
   if (PICKUP_KEYS.length > 0) {
     return PICKUP_KEYS[Math.floor(Math.random() * PICKUP_KEYS.length)];
   }
@@ -494,7 +495,7 @@ function spawnObstacleItem(lane, z, forceDef = null) {
 }
 
 function spawnWave() {
-  const spawnZ = -58;
+  const spawnZ = -60;
 
   // フィーバー中は障害物なし・全レーンに豪華パンの列！
   if (game.feverTimer > 0) {
@@ -507,67 +508,128 @@ function spawnWave() {
     return 11.5;
   }
 
-  const pattern = Math.random();
-  const highDefs = OBSTACLE_DEFS.filter(d => !d.canJumpOver);
-  const lowDefs = OBSTACLE_DEFS.filter(d => d.canJumpOver && !d.isCrow);
-  const crowDef = OBSTACLE_DEFS.find(d => d.isCrow);
-  const densityGap = Math.max(7.2, 9.8 - game.distance * 0.005);
+  const d = game.distance;
+  const highDefs = OBSTACLE_DEFS.filter(def => !def.canJumpOver);
+  const lowDefs = OBSTACLE_DEFS.filter(def => def.canJumpOver && !def.isCrow);
+  const crowDef = OBSTACLE_DEFS.find(def => def.isCrow);
+  const pickHigh = () => highDefs[Math.floor(Math.random() * highDefs.length)];
+  const pickLow = () => lowDefs[Math.floor(Math.random() * lowDefs.length)];
 
-  if (pattern < 0.25) {
-    // パターン1: ダブル高い壁（2レーンに背の高い棚/台車！残り1レーンのみ突破口）
-    const safeLane = Math.floor(Math.random() * 3);
-    for (let l = 0; l < 3; l++) {
-      if (l === safeLane) {
-        for (let k = 0; k < 3; k++) {
-          spawnBreadItem(l, spawnZ - k * 1.9, 0.68);
-        }
-      } else {
-        spawnObstacleItem(l, spawnZ, highDefs[Math.floor(Math.random() * highDefs.length)]);
-      }
-    }
-    return densityGap;
-  } else if (pattern < 0.50) {
-    // パターン2: ジャンプ必須ゲート（全レーン低い障害物＋空中にボーナスパン）
-    const bonusLane = Math.floor(Math.random() * 3);
-    for (let l = 0; l < 3; l++) {
-      spawnObstacleItem(l, spawnZ, lowDefs[Math.floor(Math.random() * lowDefs.length)]);
-      if (l === bonusLane) {
-        spawnBreadItem(l, spawnZ + 1.1, 1.45, PICKUP_KEYS[0]);
-        spawnBreadItem(l, spawnZ, 1.90, 'bread_gold');
-        spawnBreadItem(l, spawnZ - 1.1, 1.45, PICKUP_KEYS[1]);
-      }
-    }
-    return densityGap + 0.8;
-  } else if (pattern < 0.75) {
-    // パターン3: ミックス配置（高い壁 + 低い障害物 + パン列）
-    const lanes = [0, 1, 2].sort(() => Math.random() - 0.5);
-    spawnObstacleItem(lanes[0], spawnZ, highDefs[Math.floor(Math.random() * highDefs.length)]);
-    spawnObstacleItem(lanes[1], spawnZ, lowDefs[Math.floor(Math.random() * lowDefs.length)]);
+  // 段階1: 序盤 (0m〜90m) はシンプルで簡単！1レーン障害物＋パンたっぷり
+  if (d < 90) {
+    const gap = Math.max(10.5, 12.5 - d * 0.022);
+    const obsLane = Math.floor(Math.random() * 3);
+    const useHigh = d > 35 && Math.random() < 0.35;
+    spawnObstacleItem(obsLane, spawnZ, useHigh ? pickHigh() : pickLow());
+
+    const breadLane = (obsLane + 1 + Math.floor(Math.random() * 2)) % 3;
     for (let k = 0; k < 3; k++) {
-      spawnBreadItem(lanes[2], spawnZ - k * 1.8, 0.68);
+      spawnBreadItem(breadLane, spawnZ - k * 1.9, 0.68);
     }
-    // パン列の後ろにも少しズラして低い障害物を置いてリズム感を出す！
-    if (game.distance > 60) {
-      spawnObstacleItem(lanes[2], spawnZ - 6.2, lowDefs[Math.floor(Math.random() * lowDefs.length)]);
-      return densityGap + 2.4;
-    }
-    return densityGap;
-  } else {
-    // パターン4: カラス急襲 + 地上障害物
-    const safeLane = Math.floor(Math.random() * 3);
-    for (let l = 0; l < 3; l++) {
-      if (l === safeLane) {
-        for (let k = 0; k < 3; k++) {
-          spawnBreadItem(l, spawnZ - k * 1.9, 0.68);
+    return gap;
+  }
+
+  // 段階2: 中盤 (90m〜260m) 障害物が2レーンや全レーン低ゲートに増加
+  if (d < 260) {
+    const gap = Math.max(8.0, 10.2 - (d - 90) * 0.013);
+    const p = Math.random();
+    if (p < 0.38) {
+      // ミックス配置（高い壁 + 低い障害物 + パン列）
+      const lanes = [0, 1, 2].sort(() => Math.random() - 0.5);
+      spawnObstacleItem(lanes[0], spawnZ, pickHigh());
+      spawnObstacleItem(lanes[1], spawnZ, pickLow());
+      for (let k = 0; k < 3; k++) {
+        spawnBreadItem(lanes[2], spawnZ - k * 1.8, 0.68);
+      }
+      return gap;
+    } else if (p < 0.70) {
+      // ダブル高い壁（1レーン突破）
+      const safeLane = Math.floor(Math.random() * 3);
+      for (let l = 0; l < 3; l++) {
+        if (l === safeLane) {
+          for (let k = 0; k < 3; k++) spawnBreadItem(l, spawnZ - k * 1.8, 0.68);
+        } else {
+          spawnObstacleItem(l, spawnZ, pickHigh());
         }
-      } else if (Math.random() < 0.6 && crowDef) {
-        spawnObstacleItem(l, spawnZ - 3.0, crowDef);
-      } else {
-        spawnObstacleItem(l, spawnZ, OBSTACLE_DEFS[Math.floor(Math.random() * OBSTACLE_DEFS.length)]);
+      }
+      return gap;
+    } else if (p < 0.88) {
+      // ジャンプ必須ゲート
+      const bonusLane = Math.floor(Math.random() * 3);
+      for (let l = 0; l < 3; l++) {
+        spawnObstacleItem(l, spawnZ, pickLow());
+        if (l === bonusLane) {
+          spawnBreadItem(l, spawnZ, 1.85, 'bread_gold');
+        }
+      }
+      return gap + 0.8;
+    } else {
+      // カラス1羽＋地上障害物1つ
+      const lanes = [0, 1, 2].sort(() => Math.random() - 0.5);
+      spawnObstacleItem(lanes[0], spawnZ - 2.0, crowDef || pickLow());
+      spawnObstacleItem(lanes[1], spawnZ, pickLow());
+      for (let k = 0; k < 3; k++) spawnBreadItem(lanes[2], spawnZ - k * 1.8, 0.68);
+      return gap;
+    }
+  }
+
+  // 段階3・4: 後半 (260m〜) 2段・3段の複合障害物ラッシュでどんどん増える！
+  const isRush = d >= 550;
+  const baseGap = isRush
+    ? Math.max(5.2, 6.6 - (d - 550) * 0.003)
+    : Math.max(6.6, 8.2 - (d - 260) * 0.0055);
+
+  // 第1段（手前）: 2レーン障害物＋安全レーン1つ
+  const safe1 = Math.floor(Math.random() * 3);
+  for (let l = 0; l < 3; l++) {
+    if (l === safe1) {
+      spawnBreadItem(l, spawnZ, 0.68);
+      spawnBreadItem(l, spawnZ - 1.8, 0.68);
+    } else if (Math.random() < 0.30 && crowDef) {
+      spawnObstacleItem(l, spawnZ - 2.2, crowDef);
+    } else {
+      spawnObstacleItem(l, spawnZ, Math.random() < 0.55 ? pickHigh() : pickLow());
+    }
+  }
+
+  // 第2段（奥 -4.8m）: safe1にも障害物を置いてジグザグ回避やジャンプを迫る
+  const z2 = spawnZ - 4.8;
+  const safe2 = (safe1 + 1 + Math.floor(Math.random() * 2)) % 3;
+  if (Math.random() < 0.28) {
+    // 第2段が全レーン低いゲート（ジャンプ突破）
+    for (let l = 0; l < 3; l++) {
+      spawnObstacleItem(l, z2, pickLow());
+    }
+    spawnBreadItem(safe2, z2, 1.88, 'bread_gold');
+  } else {
+    for (let l = 0; l < 3; l++) {
+      if (l === safe2) {
+        spawnBreadItem(l, z2, 0.68);
+      } else if (l === safe1) {
+        // さっき安全だったレーンに高い壁または低い障害物を配置
+        spawnObstacleItem(l, z2, Math.random() < 0.65 ? pickHigh() : pickLow());
+      } else if (Math.random() < 0.85) {
+        spawnObstacleItem(l, z2, (Math.random() < 0.35 && crowDef) ? crowDef : pickLow());
       }
     }
-    return densityGap;
   }
+
+  // 激ムズ帯 (550m〜) はさらに第3段 (-9.4m) も追加して障害物密度を上げ続ける！
+  if (isRush) {
+    const z3 = spawnZ - 9.4;
+    const safe3 = (safe2 + 1 + Math.floor(Math.random() * 2)) % 3;
+    for (let l = 0; l < 3; l++) {
+      if (l === safe3) {
+        spawnBreadItem(l, z3, 0.68);
+      } else if (l === safe2 || Math.random() < 0.75) {
+        const useCrow = Math.random() < 0.32 && crowDef;
+        spawnObstacleItem(l, z3, useCrow ? crowDef : (Math.random() < 0.5 ? pickHigh() : pickLow()));
+      }
+    }
+    return baseGap + 7.2;
+  }
+
+  return baseGap + 4.0;
 }
 
 // --- 7. UI更新＆エフェクト ---
@@ -772,8 +834,8 @@ function animate() {
   }
 
   if (game.running) {
-    // 速度曲線（最初から爽快＆スリリングな高難易度加速）
-    const baseSpeed = Math.min(29.5, 15.5 + game.distance * 0.016);
+    // 速度曲線（最初は走りやすく、距離に応じてどんどん高速化）
+    const baseSpeed = Math.min(28.0, 12.5 + game.distance * 0.015);
     const boostMul = (game.dashBoostTimer > 0 || game.feverTimer > 0) ? 1.38 : 1.0;
     game.speed = baseSpeed * boostMul;
     const moveStep = game.speed * dt;
@@ -863,10 +925,15 @@ function animate() {
       b.phase += dt * 4.5;
       b.mesh.position.y = b.yBase + Math.sin(b.phase) * 0.08;
 
-      // マグネットまたはフィーバー時は吸い寄せ！
-      if ((game.magnetTimer > 0 || game.feverTimer > 0) && b.key !== 'bread_burnt' && b.mesh.position.z > -12 && b.mesh.position.z < 2) {
-        b.mesh.position.x += (game.playerX - b.mesh.position.x) * Math.min(1, dt * 10);
-        b.yBase += (game.playerY + 0.65 - b.yBase) * Math.min(1, dt * 10);
+      // マグネットまたはフィーバー時は吸い寄せ！（マグネットは控えめな範囲・強さに調整）
+      if (b.key !== 'bread_burnt') {
+        if (game.feverTimer > 0 && b.mesh.position.z > -11 && b.mesh.position.z < 2) {
+          b.mesh.position.x += (game.playerX - b.mesh.position.x) * Math.min(1, dt * 10);
+          b.yBase += (game.playerY + 0.65 - b.yBase) * Math.min(1, dt * 10);
+        } else if (game.magnetTimer > 0 && b.mesh.position.z > -7.5 && b.mesh.position.z < 1.5) {
+          b.mesh.position.x += (game.playerX - b.mesh.position.x) * Math.min(1, dt * 6.5);
+          b.yBase += (game.playerY + 0.65 - b.yBase) * Math.min(1, dt * 6.5);
+        }
       }
 
       const dx = Math.abs(b.mesh.position.x - game.playerX);
@@ -897,10 +964,10 @@ function animate() {
 
           // フィーバーゲージ上昇
           if (game.feverTimer <= 0) {
-            game.feverGauge += (b.key === 'bread_gold' ? 35 : 8);
+            game.feverGauge += (b.key === 'bread_gold' ? 25 : 6);
             if (game.feverGauge >= 100) {
               game.feverGauge = 0;
-              game.feverTimer = 7.0;
+              game.feverTimer = 5.5;
               sounds.isFever = true;
               sounds.playFever();
               flashScreen('#FFD54F');
@@ -912,15 +979,15 @@ function animate() {
             sounds.playGold();
             showBanner(`✨ 金のパン！ +¥${pts.toLocaleString()}`);
           } else if (b.key === 'bread_egg') {
-            game.doubleTimer = 8.0;
+            game.doubleTimer = 7.0;
             sounds.playPower();
             showBanner('🍳 得点2倍タイム！');
           } else if (b.key === 'bread_mushroom') {
-            game.magnetTimer = 8.0;
+            game.magnetTimer = 4.5;
             sounds.playPower();
             showBanner('🍄 パン吸い寄せマグネット！');
           } else if (b.key === 'bread_negi') {
-            game.dashBoostTimer = 6.0;
+            game.dashBoostTimer = 5.0;
             sounds.playPower();
             showBanner('🥖 無敵ねぎダッシュ！');
           } else {
